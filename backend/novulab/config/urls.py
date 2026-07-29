@@ -1,13 +1,20 @@
+from pathlib import Path
 from django.contrib import admin
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.urls import path, include, re_path
-from django.shortcuts import render
+from django.conf import settings
 
 def spa_index(request):
-    try:
-        return render(request, "index.html")
-    except Exception:
-        return JsonResponse({"message": "Novu Lab API Backend is running", "admin": "/admin/", "health": "/health/"})
+    possible_paths = [
+        settings.BASE_DIR / "staticfiles" / "index.html",
+        settings.BASE_DIR.parent.parent / "navulab-frontend" / "dist" / "index.html",
+        settings.BASE_DIR.parent / "navulab-frontend" / "dist" / "index.html",
+    ]
+    for p in possible_paths:
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                return HttpResponse(f.read(), content_type="text/html")
+    return JsonResponse({"message": "Novu Lab API Backend is running", "admin": "/admin/", "health": "/health/"})
 
 urlpatterns = [
     path("admin/", admin.site.urls),
