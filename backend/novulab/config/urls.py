@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path, include
-
 urlpatterns = [
+    path("", lambda request: JsonResponse({"message": "Novu Lab API Backend is running", "admin": "/admin/", "health": "/health/"})),
     path("admin/", admin.site.urls),
     path("health/", lambda request: JsonResponse({"status": "ok", "service": "novulab"})),
     path("api/auth/", include("apps.users.urls")),
