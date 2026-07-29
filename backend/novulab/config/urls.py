@@ -1,8 +1,15 @@
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.shortcuts import render
+
+def spa_index(request):
+    try:
+        return render(request, "index.html")
+    except Exception:
+        return JsonResponse({"message": "Novu Lab API Backend is running", "admin": "/admin/", "health": "/health/"})
+
 urlpatterns = [
-    path("", lambda request: JsonResponse({"message": "Novu Lab API Backend is running", "admin": "/admin/", "health": "/health/"})),
     path("admin/", admin.site.urls),
     path("health/", lambda request: JsonResponse({"status": "ok", "service": "novulab"})),
     path("api/auth/", include("apps.users.urls")),
@@ -14,4 +21,5 @@ urlpatterns = [
     path("api/tasks/", include("apps.tasks.urls")),
     path("api/reports/", include("apps.reports.urls")),
     path("api/chat/", include("apps.chat.urls")),
+    re_path(r"^.*$", spa_index),
 ]

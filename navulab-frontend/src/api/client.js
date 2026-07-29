@@ -1,10 +1,11 @@
 import axios from "axios";
 
-// Base URL reads from environment variable in production (e.g. Render) or defaults to local server
+// Base URL reads from environment variable, window.location.origin in production, or local server
 const GATEWAY_URL = (
   import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://127.0.0.1:8080"
+  (typeof window !== "undefined" && !window.location.origin.includes("127.0.0.1") && !window.location.origin.includes("localhost")
+    ? window.location.origin
+    : "http://127.0.0.1:8080")
 ).replace(/\/$/, "");
 
 export const api = axios.create({

@@ -59,10 +59,14 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
+FRONTEND_DIST = BASE_DIR.parent.parent / "navulab-frontend" / "dist"
+if not FRONTEND_DIST.exists():
+    FRONTEND_DIST = BASE_DIR / "frontend_dist"
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [FRONTEND_DIST] if FRONTEND_DIST.exists() else [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -135,6 +139,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.exists() else []
+
 STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
