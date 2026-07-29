@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #C7CDDA transparent;
+}
+
+html, body {
+  /* Off-canvas elements (the mobile nav drawer is `position: fixed` and slides
+     off via `translateX(-100%)`) expand the document's scrollable area to
+     negative x in Chromium/WebKit even though they're visually off-screen —
+     without this, mobile viewports show a shifted-right layout with blank
+     space on the left until you horizontally scroll. */
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #F4F6FA;
+  color: #1F2430;
+  font-family: 'Inter', sans-serif;
+}
+
+.font-display {
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid #FF7A45;
+  outline-offset: 2px;
+}

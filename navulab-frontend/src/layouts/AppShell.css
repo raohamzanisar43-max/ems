@@ -1,0 +1,347 @@
+/* Scoped styles for the NovuLabs Ops Console shell. Everything nests under
+   .novu-shell so it can never leak into unrelated pages; dark/light mode is
+   driven by the sibling .dark class (Tailwind darkMode:'class' looks for an
+   ancestor with that class). */
+
+.novu-shell {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* Custom trailing-ring cursor: a solid dot glued to the pointer with a larger
+   outlined ring that eases in behind it. */
+.novu-shell,
+.novu-shell * {
+  cursor: none;
+}
+
+.custom-cursor-dot,
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.custom-cursor-dot {
+  width: 8px;
+  height: 8px;
+  background: #1c73c9;
+  box-shadow: 0 0 10px rgba(28, 115, 201, 0.7);
+}
+
+.custom-cursor-ring {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(102, 232, 255, 0.45);
+  background: transparent;
+}
+
+@media (hover: none) {
+  .novu-shell,
+  .novu-shell * {
+    cursor: auto;
+  }
+  .custom-cursor-dot,
+  .custom-cursor-ring {
+    display: none;
+  }
+}
+
+.novu-shell .glass-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* The rule above's `position: relative` outranks Tailwind's `fixed` utility
+   (two classes beat one on specificity), so the sidebar — which is also a
+   .glass-card — was stuck at `position: relative` on mobile instead of
+   `fixed`. That kept it in normal flex flow even while translated off-screen,
+   reserving its 288px of layout width and squeezing the page content into a
+   sliver on the right. Pin the sidebar's own responsive position back. */
+.novu-shell .app-sidebar.glass-card {
+  position: fixed;
+}
+@media (min-width: 1024px) {
+  .novu-shell .app-sidebar.glass-card {
+    position: relative;
+  }
+}
+
+.novu-shell.dark .glass-card {
+  background: rgba(11, 39, 68, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(102, 232, 255, 0.22);
+  box-shadow: 0 20px 50px rgba(7, 27, 46, 0.8), 0 0 25px rgba(102, 232, 255, 0.12);
+}
+
+.novu-shell.dark .glass-card:hover {
+  border-color: rgba(102, 232, 255, 0.45);
+  box-shadow: 0 20px 50px rgba(7, 27, 46, 0.9), 0 0 35px rgba(102, 232, 255, 0.25);
+}
+
+/* Sidebar nav — plain white like the rest of the app, no glass/blur/glow. */
+.novu-shell.dark .app-sidebar.glass-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.novu-shell:not(.dark) .glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(28, 115, 201, 0.18);
+  box-shadow: 0 20px 45px rgba(7, 27, 46, 0.06), 0 2px 10px rgba(28, 115, 201, 0.05);
+}
+
+.novu-shell:not(.dark) .glass-card:hover {
+  border-color: rgba(28, 115, 201, 0.35);
+  box-shadow: 0 24px 50px rgba(7, 27, 46, 0.09), 0 0 25px rgba(28, 115, 201, 0.15);
+}
+
+.novu-shell.dark .gradient-heading {
+  background: linear-gradient(90deg, #ddfbff 0%, #8ee9ff 35%, #42b9f5 70%, #1e63c9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.novu-shell:not(.dark) .gradient-heading {
+  background: linear-gradient(90deg, #071b2e 0%, #1c73c9 50%, #0284c7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.novu-shell.dark .btn-primary-gradient {
+  background: linear-gradient(90deg, #55e6f8 0%, #1d78d7 100%);
+  color: #071b2e;
+  font-weight: 800;
+  box-shadow: 0 0 15px rgba(102, 232, 255, 0.4), 0 0 30px rgba(29, 120, 215, 0.3);
+}
+
+.novu-shell.dark .btn-primary-gradient:hover {
+  box-shadow: 0 0 25px rgba(102, 232, 255, 0.7), 0 0 50px rgba(102, 232, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.novu-shell:not(.dark) .btn-primary-gradient {
+  background: linear-gradient(90deg, #0284c7 0%, #1c73c9 100%);
+  color: #ffffff;
+  font-weight: 800;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25), 0 0 15px rgba(28, 115, 201, 0.2);
+}
+
+.novu-shell:not(.dark) .btn-primary-gradient:hover {
+  box-shadow: 0 12px 28px rgba(2, 132, 199, 0.4), 0 0 25px rgba(28, 115, 201, 0.3);
+  transform: translateY(-1px);
+}
+
+.novu-shell.dark .nav-pill-active {
+  background: linear-gradient(90deg, #1c73c9 0%, #123a5d 100%);
+  color: #66e8ff;
+  border: 1px solid rgba(102, 232, 255, 0.4);
+}
+
+.novu-shell:not(.dark) .nav-pill-active {
+  background: linear-gradient(90deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0369a1;
+  border: 1px solid rgba(2, 132, 199, 0.3);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.15);
+}
+
+@keyframes novuIconWiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-12deg) scale(1.15); }
+  75% { transform: rotate(12deg) scale(1.15); }
+}
+
+@keyframes novuIconFloatBounce {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-4px) scale(1.08); }
+}
+
+@keyframes novuIconPulseHalo {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(102, 232, 255, 0.5); }
+  50% { box-shadow: 0 0 0 10px rgba(102, 232, 255, 0); }
+}
+
+.novu-shell .anim-icon-wiggle:hover i,
+.novu-shell .nav-pill:hover i {
+  animation: novuIconWiggle 0.5s ease-in-out;
+}
+
+.novu-shell .anim-icon-float {
+  animation: novuIconFloatBounce 3s ease-in-out infinite;
+}
+
+.novu-shell .anim-icon-pulse {
+  animation: novuIconPulseHalo 2s infinite;
+}
+
+/* ---- Retheme the legacy light "ink/panel/muted/line" design tokens used by
+   Tasks/Attendance/Leaves/Reports/Chat/Payroll/Employees so every page inside
+   the Ops Console shell reads correctly on the dark glass background, without
+   having to rewrite each page's markup. Scoped to .novu-shell so the standalone
+   ForgotPassword/ResetPassword auth pages (rendered outside the shell) are
+   untouched. !important because these compete with the original utility at
+   equal specificity and must win regardless of Tailwind's generation order. */
+
+.novu-shell.dark .bg-panel {
+  background: rgba(11, 39, 68, 0.75) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.novu-shell.dark .bg-panel2 {
+  background: rgba(18, 58, 93, 0.55) !important;
+}
+.novu-shell.dark .border-line,
+.novu-shell.dark .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(102, 232, 255, 0.18) !important;
+}
+.novu-shell.dark .bg-line {
+  background-color: rgba(102, 232, 255, 0.12) !important;
+}
+.novu-shell.dark .text-line {
+  color: rgba(102, 232, 255, 0.15) !important;
+}
+.novu-shell.dark .text-ink {
+  color: #f0f9ff !important;
+}
+.novu-shell.dark .text-muted {
+  color: #7fa8c9 !important;
+}
+
+.novu-shell:not(.dark) .bg-panel {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.novu-shell:not(.dark) .bg-panel2 {
+  background: rgba(230, 240, 250, 0.7) !important;
+}
+.novu-shell:not(.dark) .border-line,
+.novu-shell:not(.dark) .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(28, 115, 201, 0.18) !important;
+}
+.novu-shell:not(.dark) .bg-line {
+  background-color: rgba(28, 115, 201, 0.1) !important;
+}
+.novu-shell:not(.dark) .text-ink {
+  color: #000000 !important;
+}
+.novu-shell:not(.dark) .text-muted {
+  color: #000000 !important;
+}
+
+/* ---- Light-mode text/surface overrides straight from the reference file.
+   In dark mode these Tailwind utilities (text-white, text-slate-300/400,
+   bg-navy-800/*) are exactly what's wanted; in light mode they need to flip
+   to dark text on light surfaces, or everything reads as invisible
+   near-white-on-white / dark-on-dark. */
+
+.novu-shell:not(.dark) .text-white {
+  color: #000000 !important;
+}
+
+.novu-shell:not(.dark) .text-slate-300,
+.novu-shell:not(.dark) .text-slate-400 {
+  color: #000000 !important;
+}
+
+.novu-shell:not(.dark) .bg-navy-800,
+.novu-shell:not(.dark) .bg-navy-800\/80,
+.novu-shell:not(.dark) .bg-navy-800\/90 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(28, 115, 201, 0.18) !important;
+}
+
+/* electric-cyan/electric-sky text is bright and neon by design for the dark
+   navy background — on a light background it's nearly invisible. Darken both
+   for light mode so every caption/label/icon stays readable. */
+.novu-shell:not(.dark) .text-electric-cyan {
+  color: #1c73c9 !important;
+}
+.novu-shell:not(.dark) .text-electric-sky {
+  color: #0c5a99 !important;
+}
+
+/* ---- Clean white content area, sidebar (module bar) stays dark.
+   Same light-mode palette as above, but scoped to .content-light instead of
+   :not(.dark) so it applies even though .novu-shell always carries .dark now
+   (dark theme was locked in shell-wide; this reopens just the content pane). */
+
+.novu-shell .content-light {
+  background: #ffffff !important;
+}
+
+.novu-shell .content-light .glass-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(28, 115, 201, 0.14) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.novu-shell .content-light .bg-panel {
+  background: #f8fafc !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.novu-shell .content-light .bg-panel2 {
+  background: #f1f5f9 !important;
+}
+.novu-shell .content-light .border-line,
+.novu-shell .content-light .divide-line > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.novu-shell .content-light .bg-line {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+.novu-shell .content-light .text-ink,
+.novu-shell .content-light .text-white {
+  color: #0f172a !important;
+}
+.novu-shell .content-light .text-muted,
+.novu-shell .content-light .text-slate-200,
+.novu-shell .content-light .text-slate-300,
+.novu-shell .content-light .text-slate-400 {
+  color: #475569 !important;
+}
+.novu-shell .content-light .bg-navy-800,
+.novu-shell .content-light .bg-navy-800\/80,
+.novu-shell .content-light .bg-navy-800\/90 {
+  background-color: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+.novu-shell .content-light .text-electric-cyan {
+  color: #1c73c9 !important;
+}
+.novu-shell .content-light .text-electric-sky {
+  color: #0c5a99 !important;
+}
+.novu-shell .content-light .gradient-heading {
+  background: linear-gradient(90deg, #5eead4 0%, #22d3ee 30%, #2563eb 65%, #1e3a8a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.novu-shell .content-light .border-electric-cyan\/10,
+.novu-shell .content-light .border-electric-cyan\/20,
+.novu-shell .content-light .border-electric-cyan\/30 {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+.novu-shell .content-light .hover\:bg-navy-700\/60:hover {
+  background-color: rgba(15, 23, 42, 0.06) !important;
+}
+.novu-shell .content-light .nav-pill-active {
+  background: linear-gradient(90deg, #e0f2fe 0%, #bae6fd 100%) !important;
+  color: #0369a1 !important;
+  border: 1px solid rgba(2, 132, 199, 0.3) !important;
+}

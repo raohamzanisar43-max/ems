@@ -1,0 +1,81 @@
+/* Scoped styles for the NovuLabs-style auth card on the Login page.
+   Everything is nested under .novu-login so it can never leak into
+   the rest of the app; dark mode is driven by the sibling .dark class
+   Tailwind's darkMode:'class' strategy looks for on an ancestor. */
+
+.novu-login {
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.novu-login .glass-card {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.novu-login.dark .glass-card {
+  background: rgba(11, 39, 68, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(102, 232, 255, 0.18);
+  box-shadow: 0 20px 50px rgba(7, 27, 46, 0.8), 0 0 30px rgba(102, 232, 255, 0.12);
+}
+
+.novu-login .input-glass {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(226, 232, 240, 0.9);
+  color: #0f172a;
+}
+
+.novu-login.dark .input-glass {
+  background: rgba(18, 58, 93, 0.6);
+  border-color: rgba(102, 232, 255, 0.2);
+  color: #f0f9ff;
+}
+
+.novu-login .input-glass:focus-within {
+  border-color: #66e8ff;
+  box-shadow: 0 0 0 4px rgba(102, 232, 255, 0.25), 0 0 15px rgba(102, 232, 255, 0.3);
+}
+
+.novu-login.dark .btn-primary-gradient {
+  background: linear-gradient(90deg, #55e6f8 0%, #1d78d7 100%);
+  color: #071b2e;
+  font-weight: 800;
+  box-shadow: 0 0 15px rgba(102, 232, 255, 0.4), 0 0 30px rgba(29, 120, 215, 0.3);
+}
+
+.novu-login.dark .btn-primary-gradient:hover {
+  box-shadow: 0 0 25px rgba(102, 232, 255, 0.6), 0 0 50px rgba(102, 232, 255, 0.3);
+}
+
+.novu-login.dark .gradient-heading {
+  background: linear-gradient(90deg, #ddfbff 0%, #8ee9ff 35%, #42b9f5 70%, #1e63c9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.novu-login .icon-box {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.novu-login .service-row:hover .icon-box {
+  transform: scale(1.12) rotate(-4deg);
+  box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.25);
+}
+
+@keyframes drawPenPath {
+  0% { stroke-dashoffset: 400; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 400; }
+}
+
+@keyframes movePenCursor {
+  0%, 100% { transform: translate(20px, 80px); }
+  25% { transform: translate(110px, 30px); }
+  50% { transform: translate(200px, 100px); }
+  75% { transform: translate(120px, 150px); }
+}

@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovuLabs - Software Solutions</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            500: '#7c3aed',
+                            600: '#6d28d9',
+                            700: '#5b21b6',
+                            800: '#4c1d95',
+                            900: '#3b0764'
+                        },
+                        navy: {
+                            900: '#071B2E',
+                            800: '#0B2744',
+                            700: '#123A5D'
+                        },
+                        electric: {
+                            azure: '#1C73C9',
+                            sky: '#43B6F2',
+                            cyan: '#66E8FF',
+                            highlight: '#A7F5FF',
+                            ice: '#DDFBFF'
+                        }
+                    },
+                    animation: {
+                        'wave': 'wave 2s infinite',
+                        'float': 'float 4s ease-in-out infinite',
+                        'float-delayed': 'float 4s ease-in-out 2s infinite',
+                        'pulse-glow': 'pulseGlow 3s infinite',
+                        'dash': 'dash 2s linear infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'code-cursor': 'blink 1s step-end infinite'
+                    },
+                    keyframes: {
+                        wave: {
+                            '0%, 100%': { transform: 'rotate(0deg)' },
+                            '20%, 60%': { transform: 'rotate(14deg)' },
+                            '40%, 80%': { transform: 'rotate(-8deg)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+                            '50%': { opacity: '0.9', transform: 'scale(1.05)' }
+                        },
+                        blink: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        body.light-mode {
+            background-color: #f6f8fd;
+            color: #0f172a;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(180deg, #071B2E 0%, #0B2744 45%, #123A5D 100%);
+            color: #f0f9ff;
+            min-height: 100vh;
+        }
+
+        /* Canvas container positioning */
+        #interactiveBgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Light Card */
+        .light-mode .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.08), 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Glassmorphism Dark Card - Enterprise Navy + Cyan Theme */
+        .dark-mode .glass-card {
+            background: rgba(11, 39, 68, 0.75);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(102, 232, 255, 0.18);
+            box-shadow: 0 20px 50px rgba(7, 27, 46, 0.8), 0 0 30px rgba(102, 232, 255, 0.12);
+        }
+
+        /* Input styling */
+        .light-mode .input-glass {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: rgba(226, 232, 240, 0.9);
+            color: #0f172a;
+        }
+        .dark-mode .input-glass {
+            background: rgba(18, 58, 93, 0.6);
+            border-color: rgba(102, 232, 255, 0.2);
+            color: #f0f9ff;
+        }
+
+        .input-glass:focus-within {
+            border-color: #66E8FF;
+            box-shadow: 0 0 0 4px rgba(102, 232, 255, 0.25), 0 0 15px rgba(102, 232, 255, 0.3);
+        }
+
+        /* Heading Gradient in Dark Mode */
+        .dark-mode .gradient-heading {
+            background: linear-gradient(90deg, #DDFBFF 0%, #8EE9FF 35%, #42B9F5 70%, #1E63C9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hero Electric Button Gradient */
+        .dark-mode .btn-primary-gradient {
+            background: linear-gradient(90deg, #55E6F8 0%, #1D78D7 100%);
+            color: #071B2E;
+            font-weight: 800;
+            box-shadow: 0 0 15px rgba(102, 232, 255, 0.4), 0 0 30px rgba(29, 120, 215, 0.3);
+        }
+
+        .dark-mode .btn-primary-gradient:hover {
+            box-shadow: 0 0 25px rgba(102, 232, 255, 0.6), 0 0 50px rgba(102, 232, 255, 0.3);
+        }
+
+        /* Animated icon container styling */
+        .icon-box {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .service-row:hover .icon-box {
+            transform: scale(1.12) rotate(-4deg);
+            box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.25);
+        }
+
+        /* Custom SVG Pen tool bezier path animation */
+        @keyframes drawPenPath {
+            0% { stroke-dashoffset: 400; }
+            50% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 400; }
+        }
+
+        .animated-bezier-path {
+            stroke-dasharray: 400;
+            animation: drawPenPath 6s ease-in-out infinite;
+        }
+
+        /* Pen tool cursor floating path movement */
+        @keyframes movePenCursor {
+            0%, 100% { transform: translate(20px, 80px); }
+            25% { transform: translate(110px, 30px); }
+            50% { transform: translate(200px, 100px); }
+            75% { transform: translate(120px, 150px); }
+        }
+
+        .pen-cursor-node {
+            animation: movePenCursor 6s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a855f7;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="light-mode min-h-screen relative flex items-center justify-center p-4 sm:p-6 lg:p-10 selection:bg-brand-500 selection:text-white">
+
+    <!-- Interactive Mouse-driven Canvas Background -->
+    <canvas id="interactiveBgCanvas"></canvas>
+
+    <!-- Main Outer Grid Container -->
+    <main class="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center my-auto py-4">
+
+        <!-- ================= LEFT COLUMN: BRAND & HERO CONTENT ================= -->
+        <div class="lg:col-span-7 flex flex-col justify-between space-y-8 pr-0 lg:pr-4">
+
+            <!-- Brand Header & Dark/Light Mode Toggle Switch -->
+            <div class="flex items-center justify-between">
+                <!-- Brand Logo Badge -->
+                <div class="flex items-center gap-3 group cursor-pointer">
+                    <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:scale-105 transition duration-300">
+                        <svg class="w-6 h-6 text-white transform group-hover:rotate-12 transition duration-300" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 18L10 6L14 14L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white dark:border-slate-900 animate-pulse"></span>
+                    </div>
+                    <div>
+                        <span class="font-outfit font-extrabold text-2xl tracking-tight block leading-none dark:text-white text-slate-900">
+                            Novu<span class="text-brand-600 dark:text-brand-500">Labs</span>
+                        </span>
+                        <span class="text-[10px] font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase mt-0.5 block">
+                            SOFTWARE SOLUTIONS
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle Button (Light/Dark Mode) -->
+                <button
+                    onclick="toggleThemeMode()"
+                    id="themeToggleBtn"
+                    class="glass-card px-4 py-2 rounded-2xl flex items-center gap-2.5 shadow-md border hover:scale-105 active:scale-95 transition-all duration-300 group"
+                    aria-label="Toggle dark mode"
+                >
+                    <div class="w-7 h-7 rounded-xl bg-amber-100 dark:bg-indigo-950 text-amber-600 dark:text-indigo-400 flex items-center justify-center transition duration-300">
+                        <i id="themeIcon" class="fa-solid fa-sun text-sm transition-transform duration-500 group-hover:rotate-45"></i>
+                    </div>
+                    <span id="themeLabel" class="text-xs font-bold text-slate-700 dark:text-slate-200">Light Mode</span>
+                </button>
+            </div>
+
+            <!-- Main Catchy Title -->
+            <div class="space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-500/10 dark:bg-electric-cyan/10 border border-brand-500/20 dark:border-electric-cyan/30 text-brand-600 dark:text-electric-cyan text-xs font-bold shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-brand-500 dark:bg-electric-cyan animate-ping"></span>
+                    <span>Engineering Next-Gen Enterprise Software & AI UI</span>
+                </div>
+
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.15] dark:text-white text-slate-900">
+                    Building Digital Solutions <br class="hidden sm:inline"/>
+                    <span class="gradient-heading bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-500 dark:from-electric-ice dark:via-electric-cyan dark:to-electric-azure bg-clip-text text-transparent">
+                        That Drive Success
+                    </span>
+                </h1>
+
+                <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
+                    NovuLabs seamlessly pairs high-performance code engineering with stunning UI/UX product design to build modern web and mobile apps.
+                </p>
+            </div>
+
+            <!-- Interactive Visual Workspace Tabs ("Coder Run Code" vs "Designer Make Design") -->
+            <div class="space-y-4">
+
+                <!-- Workspace Switcher Buttons -->
+                <div class="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+                    <button
+                        onclick="switchWorkspaceTab('coder')"
+                        id="tabCoderBtn"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 text-white shadow-lg shadow-brand-500/25 transition duration-300"
+                    >
+                        <i class="fa-solid fa-code text-xs"></i>
+                        <span>Coder Studio (Run Code)</span>
+                    </button>
+                    <button
+                        onclick="switchWorkspaceTab('designer')"
+                        id="tabDesignerBtn"
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-white/60 dark:hover:bg-slate-800/50 transition duration-300"
+                    >
+                        <i class="fa-solid fa-pen-nib text-xs"></i>
+                        <span>Designer Studio (Make Design)</span>
+                    </button>
+                </div>
+
+                <!-- ================= WORKSPACE DISPLAY 1: CODER RUN CODE ================= -->
+                <div id="coderWorkspace" class="glass-card rounded-3xl p-4 sm:p-5 transition-all duration-500">
+
+                    <!-- IDE Window Header -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                            <span class="text-xs font-mono font-semibold text-slate-500 dark:text-slate-400 ml-2 flex items-center gap-1.5">
+                                <i class="fa-brands fa-react text-sky-400"></i> AppCore.tsx
+                            </span>
+                        </div>
+
+                        <!-- Run Code Interactive Action Trigger -->
+                        <button
+                            onclick="runLiveCode()"
+                            id="runCodeBtn"
+                            class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 transition active:scale-95 group"
+                        >
+                            <i id="runBtnIcon" class="fa-solid fa-play text-[10px] group-hover:scale-110 transition"></i>
+                            <span id="runBtnText">Run Code</span>
+                        </button>
+                    </div>
+
+                    <!-- IDE Code Content Box with Active Typing Cursor -->
+                    <div class="bg-slate-950 rounded-2xl p-4 mt-3 font-mono text-xs text-slate-200 space-y-2 border border-slate-800 shadow-inner overflow-x-auto">
+                        <div class="flex items-center justify-between text-slate-500 text-[10px] border-b border-slate-900 pb-1.5">
+                            <span>// NOVULABS CORE SYSTEM CODE</span>
+                            <span id="compilerStatus" class="text-emerald-400 font-semibold">Ready</span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div><span class="text-pink-400">import</span> { NovuEngine, AICompiler } <span class="text-pink-400">from</span> <span class="text-emerald-300">'@novulabs/core'</span>;</div>
+                            <div><span class="text-purple-400">const</span> app = <span class="text-amber-300">new</span> NovuEngine({ <span class="text-sky-300">mode</span>: <span class="text-emerald-300">'high-performance'</span> });</div>
+                            <div class="text-slate-400"><span class="text-purple-400">async function</span> <span class="text-blue-400">deploySystem</span>() {</div>
+                            <div class="pl-4 text-slate-300">
+                                <span class="text-purple-400">await</span> app.<span class="text-blue-400">compileAndDeploy</span>({ <span class="text-sky-300">target</span>: <span class="text-emerald-300">'global-cloud'</span> });
+                            </div>
+                            <div class="pl-4 text-emerald-400 flex items-center gap-1">
+                                <span>console.log(</span><span class="text-emerald-300">'🚀 System running with zero latency!'</span><span>);</span>
+                                <span class="w-2 h-4 bg-emerald-400 inline-block animate-code-cursor"></span>
+                            </div>
+                            <div class="text-slate-400">}</div>
+                        </div>
+
+                        <!-- Live Interactive Execution Console Terminal Output -->
+                        <div id="terminalConsole" class="bg-slate-900/90 rounded-xl p-3 border border-slate-800/80 text-[11px] font-mono mt-2 transition-all">
+                            <div class="text-slate-400 text-[10px] flex items-center justify-between mb-1">
+                                <span>OUTPUT CONSOLE</span>
+                                <span class="text-brand-400">Live Server</span>
+                            </div>
+                            <div id="consoleText" class="text-emerald-400 font-semibold">
+                                &gt; Click [Run Code] to compile and execute program...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coder Feature Highlights -->
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div class="flex items-center gap-2.5 p-2 rounded-xl bg-indigo-50 dark:bg-slate-800/60 text-xs">
+                            <div class="w-7 h-7 rounded-lg bg-brand-600 text-white flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-code"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Clean Architecture</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400">TypeScript & Microservices</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 p-2 rounded-xl bg-emerald-50 dark:bg-slate-800/60 text-xs">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Instant Compilation</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400">Sub-second build times</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ================= WORKSPACE DISPLAY 2: DESIGNER MAKE DESIGN ================= -->
+                <div id="designerWorkspace" class="glass-card rounded-3xl p-4 sm:p-5 hidden transition-all duration-500">
+
+                    <!-- Design Tool Header & Toolbar -->
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-bold">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </span>
+                            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Novu Studio Design Tool</span>
+                        </div>
+
+                        <!-- Dynamic Color Palette Picker -->
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mr-1">Theme:</span>
+                            <button onclick="changeDesignColor('#7c3aed')" class="w-5 h-5 rounded-full bg-brand-600 ring-2 ring-white dark:ring-slate-900 shadow-sm"></button>
+                            <button onclick="changeDesignColor('#06b6d4')" class="w-5 h-5 rounded-full bg-cyan-500 ring-2 ring-white dark:ring-slate-900 shadow-sm"></button>
+                            <button onclick="changeDesignColor('#f43f5e')" class="w-5 h-5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900 shadow-sm"></button>
+                            <button onclick="changeDesignColor('#10b981')" class="w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 shadow-sm"></button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Vector Pen Tool Animation Surface -->
+                    <div class="relative bg-slate-900/90 rounded-2xl h-56 mt-3 border border-slate-800 overflow-hidden flex items-center justify-center p-4">
+
+                        <!-- Grid Overlay Background -->
+                        <div class="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+
+                        <!-- Animated Vector Bezier Path SVG -->
+                        <svg class="absolute inset-0 w-full h-full" viewBox="0 0 300 200" fill="none">
+                            <path class="animated-bezier-path" d="M 20 120 C 80 20, 160 180, 280 80" stroke="#7c3aed" stroke-width="4" stroke-linecap="round"/>
+                            <!-- Vector Control Anchors -->
+                            <circle cx="20" cy="120" r="5" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+                            <circle cx="80" cy="20" r="4" fill="#a855f7"/>
+                            <circle cx="160" cy="180" r="4" fill="#a855f7"/>
+                            <circle cx="280" cy="80" r="5" fill="#ffffff" stroke="#7c3aed" stroke-width="2"/>
+                        </svg>
+
+                        <!-- Moving Pen Tool Cursor Node -->
+                        <div class="pen-cursor-node absolute top-0 left-0 text-white z-20 pointer-events-none drop-shadow-md">
+                            <i class="fa-solid fa-location-arrow -rotate-45 text-brand-400 text-lg"></i>
+                            <span class="absolute left-4 top-2 text-[9px] font-mono bg-brand-600 text-white px-1.5 py-0.5 rounded-md shadow">Vector Point</span>
+                        </div>
+
+                        <!-- Floating Live Design Preview Card -->
+                        <div id="liveDesignCard" class="relative z-10 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md p-4 rounded-2xl border border-white/40 dark:border-slate-700 shadow-xl max-w-xs w-full transition-all duration-300">
+                            <div class="flex items-center gap-3">
+                                <div id="designCardIcon" class="w-10 h-10 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-lg shadow-md shadow-brand-500/30 transition-all duration-300">
+                                    <i class="fa-solid fa-palette"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-extrabold text-slate-900 dark:text-white">Design Component</h4>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400">Vector UI with dynamic styling</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex items-center justify-between text-[10px] font-bold">
+                                <span class="text-slate-400">UX Precision</span>
+                                <span id="designColorBadge" class="text-brand-600 dark:text-brand-400">100% Pixel Perfect</span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Designer Feature Highlights -->
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div class="flex items-center gap-2.5 p-2 rounded-xl bg-purple-50 dark:bg-slate-800/60 text-xs">
+                            <div class="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">UI/UX Systems</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400">Figma Design Libraries</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2.5 p-2 rounded-xl bg-pink-50 dark:bg-slate-800/60 text-xs">
+                            <div class="w-7 h-7 rounded-lg bg-pink-500 text-white flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-bezier-curve"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-slate-800 dark:text-slate-200 block text-[11px]">Vector Graphics</span>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400">Smooth motion design</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Left Footer Copyright -->
+            <div class="text-xs text-slate-500 dark:text-slate-400 pt-2 font-medium flex items-center justify-between">
+                <span>© 2026 NovuLabs. All rights reserved.</span>
+                <span class="text-brand-600 dark:text-brand-400 font-bold">v2.4 Live Edition</span>
+            </div>
+
+        </div>
+
+        <!-- ================= RIGHT COLUMN: AUTHENTICATION CARD ================= -->
+        <div class="lg:col-span-5 relative">
+
+            <!-- Floating Frosted Glass Card Container -->
+            <div id="authCard" class="glass-card rounded-3xl p-6 sm:p-8 md:p-10 relative overflow-hidden transition-all duration-500">
+
+                <!-- Decorative Top Ambient Light Strip -->
+                <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 via-indigo-500 to-purple-500"></div>
+
+                <!-- Form Mode Switcher Bar -->
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 id="cardHeaderTitle" class="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2 dark:text-white text-slate-900">
+                            <span>Welcome Back!</span>
+                            <span class="inline-block animate-wave origin-bottom-right">👋</span>
+                        </h2>
+                        <p id="cardHeaderSubtitle" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Login to access your NovuLabs account
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Auth Form -->
+                <form id="loginForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+
+                    <!-- Dynamic Full Name Input (Hidden by default, shown in Sign Up mode) -->
+                    <div id="nameFieldGroup" class="space-y-1.5 hidden transition-all duration-300">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Full Name</label>
+                        <div class="input-glass border rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <i class="fa-regular fa-user text-slate-400 text-sm"></i>
+                            <input
+                                type="text"
+                                id="fullNameInput"
+                                placeholder="Enter your full name"
+                                class="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Email Input Field -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Email Address</label>
+                        <div class="input-glass border rounded-2xl px-4 py-3 flex items-center gap-3">
+                            <i class="fa-regular fa-envelope text-slate-400 text-sm"></i>
+                            <input
+                                type="email"
+                                id="emailInput"
+                                required
+                                placeholder="Enter your email address"
+                                class="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Password Input Field -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Password</label>
+                        <div class="input-glass border rounded-2xl px-4 py-3 flex items-center gap-3 relative">
+                            <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+                            <input
+                                type="password"
+                                id="passwordInput"
+                                required
+                                placeholder="Enter your password"
+                                class="bg-transparent w-full text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none pr-8"
+                            />
+                            <!-- Toggle Password Eye Icon -->
+                            <button
+                                type="button"
+                                onclick="togglePasswordVisibility()"
+                                class="absolute right-4 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                                aria-label="Toggle password visibility"
+                            >
+                                <i id="eyeIcon" class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <label class="flex items-center gap-2 cursor-pointer select-none group">
+                            <input
+                                type="checkbox"
+                                checked
+                                class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 accent-brand-600 transition cursor-pointer"
+                            />
+                            <span class="text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition font-medium">Remember me</span>
+                        </label>
+
+                        <a href="#" onclick="handleForgotPassword(event)" class="text-brand-600 dark:text-brand-400 hover:text-brand-700 font-bold hover:underline transition">
+                            Forgot password?
+                        </a>
+                    </div>
+
+                    <!-- Primary Action Button (Log In / Sign Up) -->
+                    <button
+                        type="submit"
+                        id="submitBtn"
+                        class="w-full btn-primary-gradient bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-700 hover:to-indigo-800 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-brand-500/25 hover:shadow-brand-500/40 transition duration-300 transform active:scale-[0.99] flex items-center justify-center gap-2 group"
+                    >
+                        <span id="btnText">Log In</span>
+                        <i id="btnIcon" class="fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+
+                </form>
+
+                <!-- Divider -->
+                <div class="relative my-6 text-center">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                    </div>
+                    <span class="relative bg-white dark:bg-slate-900 px-3 text-xs text-slate-500 dark:text-slate-400 font-medium rounded-full">
+                        or continue with
+                    </span>
+                </div>
+
+                <!-- Social Login Options (Google, GitHub, Microsoft) -->
+                <div class="grid grid-cols-3 gap-3">
+
+                    <!-- Google Button -->
+                    <button
+                        onclick="handleSocialLogin('Google')"
+                        class="flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-200 shadow-sm group"
+                    >
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Google</span>
+                    </button>
+
+                    <!-- GitHub Button -->
+                    <button
+                        onclick="handleSocialLogin('GitHub')"
+                        class="flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-200 shadow-sm group"
+                    >
+                        <i class="fa-brands fa-github text-slate-900 dark:text-white text-base"></i>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200">GitHub</span>
+                    </button>
+
+                    <!-- Microsoft Button -->
+                    <button
+                        onclick="handleSocialLogin('Microsoft')"
+                        class="flex items-center justify-center gap-2 py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700 transition duration-200 shadow-sm group"
+                    >
+                        <svg class="w-4 h-4" viewBox="0 0 23 23">
+                            <path fill="#f35325" d="M1 1h10v10H1z"/>
+                            <path fill="#81bc06" d="M12 1h10v10H12z"/>
+                            <path fill="#05a6f0" d="M1 12h10v10H1z"/>
+                            <path fill="#ffba08" d="M12 12h10v10H12z"/>
+                        </svg>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Microsoft</span>
+                    </button>
+
+                </div>
+
+                <!-- Footer Switch Link (Log In <-> Sign Up) -->
+                <div class="mt-8 text-center text-xs font-medium text-slate-600 dark:text-slate-400">
+                    <span id="toggleQuestion">Don't have an account?</span>
+                    <button
+                        type="button"
+                        onclick="toggleAuthMode()"
+                        id="toggleAuthBtn"
+                        class="text-brand-600 dark:text-brand-400 font-extrabold hover:text-brand-800 ml-1 hover:underline transition"
+                    >
+                        Sign up
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Notification Toast Element -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <div id="toastIcon" class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span id="toastMessage" class="text-xs font-semibold">Success message</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC, ANIMATED CANVAS & WORKSPACE MODULES -->
+    <script>
+        let isDarkMode = false;
+        const canvas = document.getElementById('interactiveBgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width = window.innerWidth || 1000;
+        let height = window.innerHeight || 800;
+        let mouseX = width / 2;
+        let mouseY = height / 2;
+        let targetX = mouseX;
+        let targetY = mouseY;
+
+        // Interactive background particles
+        const particles = [];
+        const particleCount = 40;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth || 1000;
+            height = canvas.height = window.innerHeight || 800;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Track cursor position
+        window.addEventListener('mousemove', (e) => {
+            if (e && typeof e.clientX === 'number') {
+                targetX = e.clientX;
+                targetY = e.clientY;
+            }
+        });
+
+        // Initialize floating particles
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 3 + 1,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                alpha: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        // Render animation loop
+        function renderBackground() {
+            if (!width || width <= 0) width = window.innerWidth || 1000;
+            if (!height || height <= 0) height = window.innerHeight || 800;
+
+            if (isNaN(mouseX)) mouseX = width / 2;
+            if (isNaN(mouseY)) mouseY = height / 2;
+            if (isNaN(targetX)) targetX = mouseX;
+            if (isNaN(targetY)) targetY = mouseY;
+
+            mouseX += (targetX - mouseX) * 0.05;
+            mouseY += (targetY - mouseY) * 0.05;
+
+            ctx.clearRect(0, 0, width, height);
+
+            let hueX = Math.round((mouseX / width) * 60) + 220;
+            let hueY = Math.round((mouseY / height) * 40) + 260;
+
+            if (isNaN(hueX)) hueX = 240;
+            if (isNaN(hueY)) hueY = 280;
+
+            const radius = Math.max(width, height) * 0.7;
+            const grad1 = ctx.createRadialGradient(
+                mouseX, mouseY, 50,
+                mouseX, mouseY, radius > 0 ? radius : 500
+            );
+
+            if (isDarkMode) {
+                // Dark Navy + Electric Blue + Cyan Futuristic Glow
+                grad1.addColorStop(0, 'rgba(18, 58, 93, 0.85)');
+                grad1.addColorStop(0.5, 'rgba(11, 39, 68, 0.9)');
+                grad1.addColorStop(1, 'rgba(7, 27, 46, 0.98)');
+            } else {
+                // Light Mode Soft Pastels
+                grad1.addColorStop(0, `hsla(${hueX}, 80%, 94%, 0.8)`);
+                grad1.addColorStop(0.4, `hsla(${hueY}, 70%, 96%, 0.5)`);
+                grad1.addColorStop(1, 'rgba(246, 248, 253, 0.95)');
+            }
+
+            ctx.fillStyle = grad1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Glowing Orbs
+            const orb1X = width * 0.2 + (mouseX - width / 2) * 0.08;
+            const orb1Y = height * 0.3 + (mouseY - height / 2) * 0.08;
+            const gradOrb1 = ctx.createRadialGradient(orb1X, orb1Y, 0, orb1X, orb1Y, 350);
+
+            if (isDarkMode) {
+                gradOrb1.addColorStop(0, 'rgba(102, 232, 255, 0.25)');
+                gradOrb1.addColorStop(0.5, 'rgba(28, 115, 201, 0.15)');
+                gradOrb1.addColorStop(1, 'transparent');
+            } else {
+                gradOrb1.addColorStop(0, `hsla(${Math.max(0, hueX - 30)}, 85%, 88%, 0.4)`);
+                gradOrb1.addColorStop(1, 'transparent');
+            }
+            ctx.fillStyle = gradOrb1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Render subtle floating particles
+            ctx.fillStyle = isDarkMode ? 'rgba(102, 232, 255, 0.6)' : `hsla(${hueX}, 70%, 60%, 0.4)`;
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(renderBackground);
+        }
+
+        window.onload = function() {
+            renderBackground();
+        };
+
+        // ================= 2. THEME MODE TOGGLE =================
+        function toggleThemeMode() {
+            isDarkMode = !isDarkMode;
+            const body = document.body;
+            const html = document.documentElement;
+            const themeToggleBtn = document.getElementById('themeToggleBtn');
+            const themeIcon = document.getElementById('themeIcon');
+            const themeLabel = document.getElementById('themeLabel');
+
+            if (isDarkMode) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                html.classList.add('dark');
+                themeIcon.className = 'fa-solid fa-moon text-sm transition-transform duration-500 group-hover:-rotate-45';
+                themeLabel.textContent = 'Dark Mode';
+                showToast('Switched to Dark Mode 🌙', 'info');
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                html.classList.remove('dark');
+                themeIcon.className = 'fa-solid fa-sun text-sm transition-transform duration-500 group-hover:rotate-45';
+                themeLabel.textContent = 'Light Mode';
+                showToast('Switched to Light Mode ☀️', 'info');
+            }
+        }
+
+        // ================= 3. WORKSPACE TAB SWITCHER =================
+        function switchWorkspaceTab(tab) {
+            const coderWorkspace = document.getElementById('coderWorkspace');
+            const designerWorkspace = document.getElementById('designerWorkspace');
+            const tabCoderBtn = document.getElementById('tabCoderBtn');
+            const tabDesignerBtn = document.getElementById('tabDesignerBtn');
+
+            if (tab === 'coder') {
+                coderWorkspace.classList.remove('hidden');
+                designerWorkspace.classList.add('hidden');
+
+                tabCoderBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 text-white shadow-lg shadow-brand-500/25 transition duration-300';
+                tabDesignerBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-white/60 dark:hover:bg-slate-800/50 transition duration-300';
+            } else {
+                designerWorkspace.classList.remove('hidden');
+                coderWorkspace.classList.add('hidden');
+
+                tabDesignerBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-purple-600 text-white shadow-lg shadow-purple-500/25 transition duration-300';
+                tabCoderBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-white/60 dark:hover:bg-slate-800/50 transition duration-300';
+            }
+        }
+
+        // ================= 4. CODER "RUN CODE" INTERACTIVE ENGINE =================
+        let isCodeRunning = false;
+        function runLiveCode() {
+            if (isCodeRunning) return;
+            isCodeRunning = true;
+
+            const runBtnText = document.getElementById('runBtnText');
+            const runBtnIcon = document.getElementById('runBtnIcon');
+            const compilerStatus = document.getElementById('compilerStatus');
+            const consoleText = document.getElementById('consoleText');
+
+            runBtnText.textContent = 'Running...';
+            runBtnIcon.className = 'fa-solid fa-spinner animate-spin text-[10px]';
+            compilerStatus.textContent = 'Compiling...';
+            compilerStatus.className = 'text-amber-400 font-semibold animate-pulse';
+
+            consoleText.innerHTML = `<span class="text-amber-400">&gt; [COMPILING] Building TypeScript AST & Bundling Assets...</span>`;
+
+            setTimeout(() => {
+                consoleText.innerHTML = `<span class="text-sky-400">&gt; [RUNNING] Executing AppCore.tsx in V8 Engine...</span>`;
+            }, 800);
+
+            setTimeout(() => {
+                compilerStatus.textContent = 'Passed (24/24)';
+                compilerStatus.className = 'text-emerald-400 font-semibold';
+                runBtnText.textContent = 'Run Code';
+                runBtnIcon.className = 'fa-solid fa-play text-[10px]';
+
+                consoleText.innerHTML = `<span class="text-emerald-400">&gt; [SUCCESS] App deployed live! Status: 200 OK | Response Time: 12ms ✨</span>`;
+                isCodeRunning = false;
+
+                showToast('Code compiled & executed successfully! 🚀', 'success');
+            }, 1800);
+        }
+
+        // ================= 5. DESIGNER "MAKE DESIGN" COLOR ENGINE =================
+        function changeDesignColor(colorHex) {
+            const liveDesignCard = document.getElementById('liveDesignCard');
+            const designCardIcon = document.getElementById('designCardIcon');
+            const designColorBadge = document.getElementById('designColorBadge');
+
+            designCardIcon.style.backgroundColor = colorHex;
+            designCardIcon.style.boxShadow = `0 8px 20px -3px ${colorHex}66`;
+            designColorBadge.style.color = colorHex;
+            designColorBadge.textContent = `Theme: ${colorHex}`;
+
+            liveDesignCard.style.transform = 'scale(1.04)';
+            setTimeout(() => {
+                liveDesignCard.style.transform = 'scale(1)';
+            }, 250);
+
+            showToast(`Applied design palette: ${colorHex}`, 'info');
+        }
+
+        // ================= 6. AUTHENTICATION & UI INTERACTION =================
+        let isSignUpMode = false;
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('passwordInput');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.className = 'fa-regular fa-eye-slash text-sm';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.className = 'fa-regular fa-eye text-sm';
+            }
+        }
+
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+
+            const cardHeaderTitle = document.getElementById('cardHeaderTitle');
+            const cardHeaderSubtitle = document.getElementById('cardHeaderSubtitle');
+            const nameFieldGroup = document.getElementById('nameFieldGroup');
+            const btnText = document.getElementById('btnText');
+            const toggleQuestion = document.getElementById('toggleQuestion');
+            const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+
+            if (isSignUpMode) {
+                cardHeaderTitle.innerHTML = `<span>Create Account</span> <span class="inline-block animate-bounce">🎉</span>`;
+                cardHeaderSubtitle.textContent = 'Join NovuLabs today & build the future';
+                nameFieldGroup.classList.remove('hidden');
+                btnText.textContent = 'Sign Up';
+                toggleQuestion.textContent = 'Already have an account?';
+                toggleAuthBtn.textContent = 'Log in';
+            } else {
+                cardHeaderTitle.innerHTML = `<span>Welcome Back!</span> <span class="inline-block animate-wave origin-bottom-right">👋</span>`;
+                cardHeaderSubtitle.textContent = 'Login to access your NovuLabs account';
+                nameFieldGroup.classList.add('hidden');
+                btnText.textContent = 'Log In';
+                toggleQuestion.textContent = "Don't have an account?";
+                toggleAuthBtn.textContent = 'Sign up';
+            }
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+
+            btnText.textContent = isSignUpMode ? 'Creating account...' : 'Authenticating...';
+            btnIcon.className = 'fa-solid fa-circle-notch animate-spin text-xs';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                btnIcon.className = 'fa-solid fa-arrow-right text-xs group-hover:translate-x-1 transition-transform';
+                btnText.textContent = isSignUpMode ? 'Sign Up' : 'Log In';
+
+                showToast(
+                    isSignUpMode ? `Welcome aboard! Account created for ${email}` : `Successfully logged in as ${email}`,
+                    'success'
+                );
+            }, 1500);
+        }
+
+        function handleSocialLogin(provider) {
+            showToast(`Connecting to ${provider}...`, 'info');
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('emailInput').value;
+            if (!email) {
+                showToast('Please enter your email address first', 'error');
+            } else {
+                showToast(`Password reset link sent to ${email}`, 'success');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMessage.textContent = message;
+
+            if (type === 'error') {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-xs';
+                toastIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else if (type === 'info') {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs';
+                toastIcon.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i>';
+            } else {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs';
+                toastIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
