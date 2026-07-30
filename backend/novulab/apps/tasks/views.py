@@ -24,21 +24,22 @@ class TaskViewSet(DepartmentScopedQuerysetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
+        extra = {"created_by_id": user.id, "created_by_username": user.username}
         if user.can_see_all_departments:
-            serializer.save(created_by_id=user.id)
+            serializer.save(**extra)
         elif user.is_team_lead:
             # A team lead can assign within their own department only —
             # force the department regardless of what was submitted.
             self._assert_assignee_in_own_department(user, serializer.validated_data.get("assigned_to_id"))
-            serializer.save(created_by_id=user.id, department_id=user.department_id)
+            serializer.save(department_id=user.department_id, **extra)
         else:
             # Employees without task-management rights can only ever create a
             # task assigned to themselves — override whatever was submitted.
             serializer.save(
-                created_by_id=user.id,
                 assigned_to_id=user.id,
                 assigned_to_username=user.username,
                 department_id=user.department_id,
+                **extra,
             )
 
     def perform_update(self, serializer):
@@ -47,9 +48,15 @@ class TaskViewSet(DepartmentScopedQuerysetMixin, viewsets.ModelViewSet):
         new_status = serializer.validated_data.get("status", instance.status)
         extra = {}
         if new_status == Task.Status.IN_PROGRESS and instance.status != Task.Status.IN_PROGRESS:
-            extra["started_at"] = timezone.now()
+            if not instance.started_at:
+                extra["started_at"] = timezone.now()
         if new_status == Task.Status.COMPLETED and instance.status != Task.Status.COMPLETED:
             extra["completed_at"] = timezone.now()
+            if not instance.started_at:
+                extra["started_at"] = instance.created_at
+        if instance.status == Task.Status.COMPLETED and new_status != Task.Status.COMPLETED:
+            extra["completed_at"] = None
+
         if user.can_see_all_departments:
             pass  # unrestricted
         elif user.is_team_lead:

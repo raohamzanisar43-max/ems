@@ -18,6 +18,7 @@ export default function Payroll() {
     items: payslips, page, count, hasNext, hasPrevious, loading, error, setError, goToPage,
   } = usePaginatedList(endpoint, "Couldn't load payroll.");
   const [showForm, setShowForm] = useState(false);
+  const [employees, setEmployees] = useState([]);
 
   const [form, setForm] = useState({
     employee_id: "",
@@ -28,6 +29,26 @@ export default function Payroll() {
     allowances: "0",
     deductions: "0",
   });
+
+  useEffect(() => {
+    if (canManage && showForm) {
+      api.get("/api/auth/employees/", { params: { page_size: 500 } })
+        .then(({ data }) => setEmployees(data.results || data))
+        .catch(() => {});
+    }
+  }, [canManage, showForm]);
+
+  function handleSelectEmployee(empId) {
+    const emp = employees.find((e) => String(e.id) === String(empId));
+    if (emp) {
+      setForm((f) => ({
+        ...f,
+        employee_id: emp.id,
+        employee_username: emp.username,
+        department_id: emp.department || "",
+      }));
+    }
+  }
 
   function printPayslip(p) {
     const win = window.open("", "_blank", "width=700,height=900");
@@ -79,6 +100,10 @@ export default function Payroll() {
 
   async function handleCreate(e) {
     e.preventDefault();
+    if (!form.employee_id) {
+      setError("Please select an employee first.");
+      return;
+    }
     try {
       await api.post("/api/payroll/payslips/", {
         ...form,
@@ -123,20 +148,21 @@ export default function Payroll() {
       {showForm && (
         <Card className="p-5 mb-6">
           <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs text-muted mb-1.5">Employee ID</label>
-              <input required type="number" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
-                value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-muted mb-1.5">Username</label>
-              <input required className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
-                value={form.employee_username} onChange={(e) => setForm({ ...form, employee_username: e.target.value })} />
-            </div>
-            <div>
-              <label className="block text-xs text-muted mb-1.5">Department ID</label>
-              <input required type="number" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
-                value={form.department_id} onChange={(e) => setForm({ ...form, department_id: e.target.value })} />
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="block text-xs text-muted mb-1.5">Select Employee</label>
+              <select
+                required
+                className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                value={form.employee_id}
+                onChange={(e) => handleSelectEmployee(e.target.value)}
+              >
+                <option value="" disabled>Pick an employee from backend database…</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {(emp.first_name || emp.username) + (emp.last_name ? ` ${emp.last_name}` : "")} — @{emp.username} ({emp.department_name || "No dept"})
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-muted mb-1.5">Month</label>
@@ -159,7 +185,7 @@ export default function Payroll() {
                 value={form.deductions} onChange={(e) => setForm({ ...form, deductions: e.target.value })} />
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
-              <Button type="submit">Generate</Button>
+              <Button type="submit"><i className="fa-solid fa-file-circle-plus"></i> Generate Payslip</Button>
             </div>
           </form>
         </Card>

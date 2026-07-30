@@ -19,6 +19,7 @@ class Task(models.Model):
     assigned_to_username = models.CharField(max_length=150)
     department_id = models.IntegerField(null=True, blank=True)
     created_by_id = models.IntegerField()
+    created_by_username = models.CharField(max_length=150, blank=True, default="")
 
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)

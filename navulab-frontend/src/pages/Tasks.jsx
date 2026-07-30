@@ -30,6 +30,39 @@ function isOverdue(t) {
   return Boolean(t.due_date) && t.status !== "COMPLETED" && t.due_date < todayStr();
 }
 
+function formatDateTime(isoStr) {
+  if (!isoStr) return "—";
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return isoStr;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function calculateDuration(startIso, endIso) {
+  if (!startIso) return "N/A";
+  const start = new Date(startIso).getTime();
+  const end = endIso ? new Date(endIso).getTime() : Date.now();
+  if (isNaN(start) || isNaN(end) || end < start) return "< 1m";
+
+  const diffMs = end - start;
+  const totalMins = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMins / (24 * 60));
+  const hours = Math.floor((totalMins % (24 * 60)) / 60);
+  const mins = totalMins % 60;
+  const secs = Math.floor((diffMs % 60000) / 1000);
+
+  if (days > 0) return `${days}d ${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  if (mins > 0) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+}
+
 const STAT_COLOR_CLASSES = {
   signal: { border: "border-signal/30", box: "bg-signal/10 text-signal" },
   mint: { border: "border-mint/30", box: "bg-mint/10 text-mint" },
@@ -183,6 +216,14 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [listPage, setListPage] = useState(1);
+  const [nowTime, setNowTime] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   async function loadTasks() {
     setLoading(true);
@@ -300,15 +341,17 @@ export default function Tasks() {
           .map(
             (t) => `
         <tr>
-          <td>${t.title}</td>
+          <td><strong>${t.title}</strong></td>
           <td>${t.priority}</td>
           <td>${t.status.replace("_", " ")}</td>
+          <td>${formatDateTime(t.created_at)}</td>
           <td>${t.due_date || "—"}</td>
-          <td>${t.completed_at ? t.completed_at.slice(0, 10) : "—"}</td>
+          <td>${t.completed_at ? formatDateTime(t.completed_at) : "—"}</td>
+          <td>${t.status === "COMPLETED" ? calculateDuration(t.started_at || t.created_at, t.completed_at) : (t.status === "IN_PROGRESS" ? calculateDuration(t.started_at || t.created_at, Date.now()) + " (active)" : "—")}</td>
         </tr>`
           )
           .join("")
-      : `<tr><td colspan="5" style="text-align:center;color:#8A93A6;padding:20px 0;">No tasks in this period.</td></tr>`;
+      : `<tr><td colspan="7" style="text-align:center;color:#8A93A6;padding:20px 0;">No tasks in this period.</td></tr>`;
 
     win.document.write(`
       <!doctype html>
@@ -317,14 +360,14 @@ export default function Tasks() {
           <meta charset="utf-8" />
           <title>${periodLabel} Task Report — ${user?.username}</title>
           <style>
-            body { font-family: 'Inter', Arial, sans-serif; color: #1F2430; padding: 40px; max-width: 720px; margin: 0 auto; }
+            body { font-family: 'Inter', Arial, sans-serif; color: #1F2430; padding: 40px; max-width: 850px; margin: 0 auto; }
             .brand { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #1C73C9; padding-bottom: 14px; margin-bottom: 20px; }
             h1 { font-size: 20px; margin: 0; color: #071B2E; }
             .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #1C73C9; font-weight: 700; }
             .muted { color: #8A93A6; font-size: 12px; margin-bottom: 6px; }
             table { width: 100%; border-collapse: collapse; margin-top: 16px; }
             th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #8A93A6; padding: 8px 6px; border-bottom: 2px solid #E7EAF1; }
-            td { padding: 10px 6px; border-bottom: 1px solid #E7EAF1; font-size: 13px; }
+            td { padding: 10px 6px; border-bottom: 1px solid #E7EAF1; font-size: 12px; }
             .summary { display: flex; gap: 24px; margin-top: 18px; }
             .summary div { font-size: 13px; color: #8A93A6; }
             .summary strong { display: block; font-size: 18px; color: #071B2E; }
@@ -347,7 +390,7 @@ export default function Tasks() {
           </div>
           <table>
             <thead>
-              <tr><th>Title</th><th>Priority</th><th>Status</th><th>Due date</th><th>Completed</th></tr>
+              <tr><th>Title</th><th>Priority</th><th>Status</th><th>Created At</th><th>Due date</th><th>Completed At</th><th>Duration</th></tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
@@ -397,7 +440,13 @@ export default function Tasks() {
     return allTasks.filter((t) => {
       if (statusFilter !== "ALL" && t.status !== statusFilter) return false;
       if (priorityFilter !== "ALL" && t.priority !== priorityFilter) return false;
-      if (q && !t.title.toLowerCase().includes(q) && !(t.assigned_to_username || "").toLowerCase().includes(q)) return false;
+      if (
+        q &&
+        !t.title.toLowerCase().includes(q) &&
+        !(t.assigned_to_username || "").toLowerCase().includes(q) &&
+        !(t.created_by_username || "").toLowerCase().includes(q)
+      )
+        return false;
       return true;
     });
   }, [allTasks, search, statusFilter, priorityFilter]);
@@ -664,12 +713,12 @@ export default function Tasks() {
             />
           ) : (
             <>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {pageTasks.map((t) => (
-                  <Card key={t.id} className={`p-4 flex items-center justify-between gap-4 ${isOverdue(t) ? "border-rose/30" : ""}`}>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2.5 mb-1 flex-wrap">
-                        <h4 className="font-medium text-ink truncate">{t.title}</h4>
+                  <Card key={t.id} className={`p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 ${isOverdue(t) ? "border-rose/30" : ""}`}>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h4 className="font-semibold text-ink text-base truncate">{t.title}</h4>
                         <StatusPill status={t.status} />
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${PRIORITY_STYLES[t.priority]}`}>
                           {t.priority}
@@ -680,14 +729,70 @@ export default function Tasks() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-muted truncate">
-                        {t.description || "No description"}
-                      </p>
-                      <p className="text-xs text-muted mt-1.5 font-mono">
-                        {t.assigned_to_username} · {t.due_date ? `Due ${t.due_date}` : "No due date"}
-                      </p>
+
+                      {t.description && (
+                        <p className="text-sm text-muted line-clamp-2">
+                          {t.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-xs text-muted">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-ink">
+                          <i className="fa-solid fa-user text-signal/80 text-[11px]"></i>
+                          <span>Assignee: <strong>{t.assigned_to_username}</strong></span>
+                        </span>
+
+                        <span className="inline-flex items-center gap-1.5 text-muted font-mono" title={`Created: ${formatDateTime(t.created_at)}`}>
+                          <i className="fa-solid fa-calendar-plus text-muted text-[11px]"></i>
+                          <span>Created: <strong className="text-ink">{formatDateTime(t.created_at)}</strong> {t.created_by_username && t.created_by_username !== t.assigned_to_username ? `(by ${t.created_by_username})` : ""}</span>
+                        </span>
+
+                        {t.due_date && (
+                          <span className="inline-flex items-center gap-1.5 text-muted font-mono">
+                            <i className="fa-regular fa-calendar-check text-[11px]"></i>
+                            <span>Due: <strong>{t.due_date}</strong></span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Live Timers & Execution Timestamps */}
+                      <div className="pt-1 flex items-center flex-wrap gap-2">
+                        {t.status === "COMPLETED" && (
+                          <>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-mint/10 text-mint border border-mint/25">
+                              <i className="fa-solid fa-circle-check"></i>
+                              Completed: {formatDateTime(t.completed_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-mint/20 text-mint border border-mint/40">
+                              <i className="fa-solid fa-stopwatch"></i>
+                              Time Taken: {calculateDuration(t.started_at || t.created_at, t.completed_at)}
+                            </span>
+                          </>
+                        )}
+
+                        {t.status === "IN_PROGRESS" && (
+                          <>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-signal/10 text-signal border border-signal/25">
+                              <i className="fa-solid fa-play"></i>
+                              Started: {formatDateTime(t.started_at || t.created_at)}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber/20 text-amber border border-amber/40">
+                              <i className="fa-solid fa-stopwatch animate-pulse"></i>
+                              Timer: {calculateDuration(t.started_at || t.created_at, nowTime)} elapsed
+                            </span>
+                          </>
+                        )}
+
+                        {t.status === "PENDING" && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-panel2 text-muted border border-line">
+                            <i className="fa-regular fa-hourglass-half text-muted"></i>
+                            Pending start
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+
+                    <div className="flex items-center gap-2 shrink-0 self-start md:self-center pt-2 md:pt-0">
                       <select
                         value={t.status}
                         onChange={(e) => updateStatus(t.id, e.target.value)}

@@ -13,8 +13,21 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [taskList, setTaskList] = useState([]);
   const [newForm, setNewForm] = useState({ other_user_id: "", task_id: "" });
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (!showNew) return;
+    api.get("/api/auth/employees/", { params: { page_size: 500 } })
+      .then(({ data }) => setEmployees((data.results || data).filter((e) => e.id !== user?.id)))
+      .catch(() => {});
+
+    api.get("/api/tasks/tasks/", { params: { page_size: 500 } })
+      .then(({ data }) => setTaskList(data.results || data))
+      .catch(() => {});
+  }, [showNew, user?.id]);
 
   async function loadMessages(conversationId) {
     try {
@@ -47,6 +60,10 @@ export default function Chat() {
 
   async function handleNewConversation(e) {
     e.preventDefault();
+    if (!newForm.other_user_id) {
+      setError("Please select a person to start a conversation with.");
+      return;
+    }
     try {
       const { data } = await api.post("/api/chat/conversations/", {
         participant_ids: [user.id, Number(newForm.other_user_id)],
@@ -82,14 +99,35 @@ export default function Chat() {
         <Card className="p-5 mb-6">
           <form onSubmit={handleNewConversation} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-muted mb-1.5">Other person's user ID</label>
-              <input required type="number" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
-                value={newForm.other_user_id} onChange={(e) => setNewForm({ ...newForm, other_user_id: e.target.value })} />
+              <label className="block text-xs text-muted mb-1.5">Chat with employee</label>
+              <select
+                required
+                className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                value={newForm.other_user_id}
+                onChange={(e) => setNewForm({ ...newForm, other_user_id: e.target.value })}
+              >
+                <option value="" disabled>Select employee…</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {(emp.first_name || emp.username) + (emp.last_name ? ` ${emp.last_name}` : "")} (@{emp.username})
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="block text-xs text-muted mb-1.5">Related task ID (optional)</label>
-              <input type="number" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
-                value={newForm.task_id} onChange={(e) => setNewForm({ ...newForm, task_id: e.target.value })} />
+              <label className="block text-xs text-muted mb-1.5">Related task (optional)</label>
+              <select
+                className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                value={newForm.task_id}
+                onChange={(e) => setNewForm({ ...newForm, task_id: e.target.value })}
+              >
+                <option value="">— No task attached —</option>
+                {taskList.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    #{t.id} {t.title} ({t.status})
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="sm:col-span-2">
               <Button type="submit"><i className="fa-solid fa-comment-dots"></i> Start conversation</Button>
