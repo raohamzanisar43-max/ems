@@ -56,8 +56,8 @@ export default function AppShell() {
       .get("/api/tasks/tasks/")
       .then(({ data }) => {
         if (cancelled) return;
-        const tasks = data.results || data;
-        setPendingTasksCount(tasks.filter((t) => t.status === "PENDING").length);
+        const tasks = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
+        setPendingTasksCount(tasks.filter((t) => t && t.status === "PENDING").length);
       })
       .catch(() => {});
     return () => {
