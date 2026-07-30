@@ -39,7 +39,7 @@ const PAGE_TITLES = {
 };
 
 export default function AppShell() {
-  const { user, logout, canSeeAllDepartments, isFinance, isHR, isAdmin, isTeamLead } = useAuth();
+  const { user, logout, canSeeAllDepartments, isFinance, isHR, isAdmin, isCEO, isCTO, isTeamLead } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
