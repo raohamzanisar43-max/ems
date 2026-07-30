@@ -129,4 +129,4 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request):
-        return Response(UserListSerializer(request.user).data)
+        return Response(UserListSerializer(request.user, context={"request": request}).data)

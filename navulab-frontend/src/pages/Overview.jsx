@@ -99,19 +99,23 @@ function DepartmentBoard() {
           api.get("/api/attendance/attendance/"),
         ]);
         if (cancelled) return;
-        setDepartments(deptRes.data.results || deptRes.data);
-        setEmployees(empRes.data.results || empRes.data);
-        setTasks(taskRes.data.results || taskRes.data);
+        const depts = Array.isArray(deptRes.data?.results) ? deptRes.data.results : (Array.isArray(deptRes.data) ? deptRes.data : []);
+        const emps = Array.isArray(empRes.data?.results) ? empRes.data.results : (Array.isArray(empRes.data) ? empRes.data : []);
+        const tsks = Array.isArray(taskRes.data?.results) ? taskRes.data.results : (Array.isArray(taskRes.data) ? taskRes.data : []);
+        const atts = Array.isArray(attRes.data?.results) ? attRes.data.results : (Array.isArray(attRes.data) ? attRes.data : []);
+
+        setDepartments(depts);
+        setEmployees(emps);
+        setTasks(tsks);
 
         const today = new Date().toISOString().slice(0, 10);
-        const attendance = attRes.data.results || attRes.data;
         const byEmployee = {};
-        attendance.filter((a) => a.date === today).forEach((a) => {
+        atts.filter((a) => a && a.date === today).forEach((a) => {
           byEmployee[a.employee_id] = a.status;
         });
         setAttendanceToday(byEmployee);
       } catch {
-        // dashboard is best-effort — some services may still be warming up
+        // dashboard is best-effort
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -198,24 +202,30 @@ export default function Overview() {
     let cancelled = false;
     async function load() {
       try {
-        const [tasksRes, reportsRes, meRes] = await Promise.all([
+        const [tasksResult, reportsResult, meResult] = await Promise.allSettled([
           api.get("/api/tasks/tasks/", { params: { page_size: 500 } }),
           api.get("/api/reports/reports/", { params: { page_size: 500 } }),
           api.get("/api/auth/employees/me/"),
         ]);
-        const tasks = tasksRes.data.results || tasksRes.data;
-        const reports = reportsRes.data.results || reportsRes.data;
+
+        const tasksData = tasksResult.status === "fulfilled" ? tasksResult.value.data : null;
+        const reportsData = reportsResult.status === "fulfilled" ? reportsResult.value.data : null;
+        const meData = meResult.status === "fulfilled" ? meResult.value.data : null;
+
+        const tasks = Array.isArray(tasksData?.results) ? tasksData.results : (Array.isArray(tasksData) ? tasksData : []);
+        const reports = Array.isArray(reportsData?.results) ? reportsData.results : (Array.isArray(reportsData) ? reportsData : []);
+
         if (!cancelled) {
           setStats({
             tasksTotal: tasks.length,
-            tasksPending: tasks.filter((t) => t.status === "PENDING").length,
-            tasksCompleted: tasks.filter((t) => t.status === "COMPLETED").length,
-            reportsPending: reports.filter((r) => r.review_status === "PENDING_REVIEW").length,
+            tasksPending: tasks.filter((t) => t && t.status === "PENDING").length,
+            tasksCompleted: tasks.filter((t) => t && t.status === "COMPLETED").length,
+            reportsPending: reports.filter((r) => r && r.review_status === "PENDING_REVIEW").length,
           });
-          setDepartmentName(meRes.data.department_name || null);
+          setDepartmentName(meData?.department_name || null);
         }
       } catch {
-        // services may still be warming up — fail quietly on the overview
+        // fail-safe fallback
       } finally {
         if (!cancelled) setLoading(false);
       }

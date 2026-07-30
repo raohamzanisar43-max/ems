@@ -21,12 +21,14 @@ export function usePaginatedList(endpoint, errorMessage = "Couldn't load that da
       setError("");
       try {
         const { data } = await api.get(endpoint, { params: { page: pageNum } });
-        setItems(data.results || data);
-        setCount(data.count ?? (data.results || data).length);
-        setHasNext(Boolean(data.next));
-        setHasPrevious(Boolean(data.previous));
+        const list = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
+        setItems(list);
+        setCount(typeof data?.count === "number" ? data.count : list.length);
+        setHasNext(Boolean(data?.next));
+        setHasPrevious(Boolean(data?.previous));
         setPage(pageNum);
       } catch {
+        setItems([]);
         setError(errorMessage);
       } finally {
         setLoading(false);
