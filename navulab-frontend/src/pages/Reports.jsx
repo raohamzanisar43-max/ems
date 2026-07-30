@@ -10,21 +10,35 @@ export default function Reports() {
     items: reports, page, count, hasNext, hasPrevious, loading, error, setError, goToPage, reload,
   } = usePaginatedList("/api/reports/reports/", "Couldn't load reports.");
   const [showForm, setShowForm] = useState(false);
+  const [tasks, setTasks] = useState([]);
   const [comment, setComment] = useState({});
   const [form, setForm] = useState({
     report_date: new Date().toISOString().slice(0, 10),
     summary: "",
+    task_id: "",
     hours_worked: "",
   });
 
   const canReview = canSeeAllDepartments || isTeamLead;
 
+  useEffect(() => {
+    if (showForm) {
+      api.get("/api/tasks/tasks/", { params: { page_size: 500 } })
+        .then(({ data }) => setTasks(data.results || data))
+        .catch(() => {});
+    }
+  }, [showForm]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      await api.post("/api/reports/reports/", form);
+      const payload = {
+        ...form,
+        task_id: form.task_id ? Number(form.task_id) : null,
+      };
+      await api.post("/api/reports/reports/", payload);
       setShowForm(false);
-      setForm({ report_date: new Date().toISOString().slice(0, 10), summary: "", hours_worked: "" });
+      setForm({ report_date: new Date().toISOString().slice(0, 10), summary: "", task_id: "", hours_worked: "" });
       goToPage(1);
     } catch {
       setError("Couldn't submit — you may have already submitted a report for that date.");
@@ -61,7 +75,7 @@ export default function Reports() {
       {showForm && (
         <Card className="p-5 mb-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs text-muted mb-1.5">Date</label>
                 <input
@@ -82,6 +96,19 @@ export default function Reports() {
                   value={form.hours_worked}
                   onChange={(e) => setForm({ ...form, hours_worked: e.target.value })}
                 />
+              </div>
+              <div>
+                <label className="block text-xs text-muted mb-1.5">Related Task (optional)</label>
+                <select
+                  className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                  value={form.task_id}
+                  onChange={(e) => setForm({ ...form, task_id: e.target.value })}
+                >
+                  <option value="">— General / No Task —</option>
+                  {tasks.map((t) => (
+                    <option key={t.id} value={t.id}>#{t.id} {t.title}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
@@ -112,7 +139,14 @@ export default function Reports() {
                 <div className="flex items-center gap-3">
                   <Avatar name={r.employee_username} size="md" />
                   <div>
-                    <p className="text-ink font-medium">{r.employee_username}</p>
+                    <p className="text-ink font-medium flex items-center gap-2">
+                      {r.employee_username}
+                      {r.task_title && (
+                        <span className="text-[11px] bg-signal/10 text-signal border border-signal/20 px-2 py-0.5 rounded-full font-medium">
+                          <i className="fa-solid fa-list-check text-[10px] mr-1"></i>{r.task_title}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted font-mono mt-0.5 flex items-center gap-1.5">
                       <i className="fa-solid fa-calendar-day"></i>{r.report_date}
                       <span className="mx-0.5">·</span>

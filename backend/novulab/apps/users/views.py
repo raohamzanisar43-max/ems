@@ -47,9 +47,9 @@ class CustomRoleViewSet(viewsets.ModelViewSet):
 
 
 class CompanyProfileView(generics.RetrieveUpdateAPIView):
-    """Singleton company profile shown on the Settings page. HR/Admin only."""
+    """Singleton company profile shown on the Settings page. HR/Admin/CEO/CTO."""
     serializer_class = CompanyProfileSerializer
-    permission_classes = [IsHRorAdmin]
+    permission_classes = [IsHRorCEO]
 
     def get_object(self):
         obj, _ = CompanyProfile.objects.get_or_create(pk=1)
@@ -58,7 +58,7 @@ class CompanyProfileView(generics.RetrieveUpdateAPIView):
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    - HR/CEO/CTO: see, manage, and delete all employees.
+    - HR/CEO/CTO: see, manage, and delete employees according to permissions.
     - Team Lead: see + create only within own department (Employee role only).
     - Employee: see only own profile.
     """
@@ -91,9 +91,6 @@ class UserViewSet(viewsets.ModelViewSet):
         user = serializer.save()
         send_credentials_email(user, user._generated_password)
         data = UserListSerializer(user).data
-        # No real mailbox is wired up yet (see EMAIL_BACKEND in settings.py), so the
-        # credentials email only ever reaches the console/log. Surface the password
-        # directly in dev so HR can actually hand it to the employee.
         if settings.DEBUG:
             data["generated_password"] = user._generated_password
         return Response(data, status=status.HTTP_201_CREATED)
@@ -102,6 +99,13 @@ class UserViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         if instance.id == request.user.id:
             return Response({"detail": "You can't delete your own account."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Safeguard: Prevents CTO/HR from deleting CEO, Admin, or higher level accounts
+        if instance.is_admin or instance.is_ceo or instance.is_cto:
+            if not request.user.is_admin:
+                return Response({"detail": "Only System Admins can delete Executive (CEO/CTO/Admin) accounts."}, status=status.HTTP_403_FORBIDDEN)
+        if instance.is_hr and not (request.user.is_admin or request.user.is_ceo):
+            return Response({"detail": "You are not authorized to delete HR accounts."}, status=status.HTTP_403_FORBIDDEN)
 
         employee_id = instance.id
 

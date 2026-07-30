@@ -52,10 +52,25 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated, CanReview])
     def review(self, request, pk=None):
         leave_request = self.get_object()
+        if leave_request.employee_id == request.user.id:
+            raise PermissionDenied("You cannot approve or reject your own leave request.")
+
         serializer = ReviewLeaveRequestSerializer(leave_request, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save(
+        updated = serializer.save(
             reviewed_by_id=request.user.id,
             reviewed_at=timezone.now(),
         )
-        return Response(LeaveRequestSerializer(leave_request).data)
+
+        try:
+            from apps.notifications.models import Notification
+            status_text = updated.status.lower()
+            Notification.objects.create(
+                recipient_id=updated.employee_id,
+                title=f"Leave Request {updated.status.title()}",
+                message=f"Your {updated.leave_type} leave request ({updated.start_date} to {updated.end_date}) was {status_text} by @{request.user.username}.",
+            )
+        except Exception:
+            pass
+
+        return Response(LeaveRequestSerializer(updated).data)

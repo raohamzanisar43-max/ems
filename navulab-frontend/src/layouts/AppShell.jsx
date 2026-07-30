@@ -258,19 +258,22 @@ export default function AppShell() {
                     <i className="fa-solid fa-shield-halved text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
                     <span>Permissions</span>
                   </NavLink>
-                  <NavLink
-                    to="/settings"
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                        isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                      }`
-                    }
-                  >
-                    <i className="fa-solid fa-gear text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                    <span>Settings</span>
-                  </NavLink>
                 </>
+              )}
+
+              {(isHR || isAdmin || isCEO || isCTO) && (
+                <NavLink
+                  to="/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
+                      isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
+                    }`
+                  }
+                >
+                  <i className="fa-solid fa-gear text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
+                  <span>Settings</span>
+                </NavLink>
               )}
             </nav>
 

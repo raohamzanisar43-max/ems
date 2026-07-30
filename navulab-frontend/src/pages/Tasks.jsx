@@ -753,6 +753,13 @@ export default function Tasks() {
                             <span>Due: <strong>{t.due_date}</strong></span>
                           </span>
                         )}
+
+                        {t.department_name && (
+                          <span className="inline-flex items-center gap-1.5 text-muted font-mono">
+                            <i className="fa-solid fa-building text-[11px]"></i>
+                            <span>Dept: <strong className="text-ink">{t.department_name}</strong></span>
+                          </span>
+                        )}
                       </div>
 
                       {/* Live Timers & Execution Timestamps */}

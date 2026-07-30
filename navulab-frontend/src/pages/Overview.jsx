@@ -156,7 +156,7 @@ function DepartmentBoard() {
                       <span className="text-amber">{pending} pending</span>
                       <span className="text-signal">{started} started</span>
                       <span className="text-mint">{done} done</span>
-                      <StatusPill status={attendanceToday[emp.id] || "ABSENT"} />
+                      <StatusPill status={attendanceToday[emp.id] || (["ADMIN", "CEO", "CTO"].includes(emp.role) ? "PRESENT" : "ABSENT")} />
                     </div>
                   </div>
                 );

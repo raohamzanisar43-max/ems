@@ -170,8 +170,6 @@ export default function Employees() {
     try {
       if (editingId) {
         delete payload.password;
-        delete payload.role;
-        delete payload.custom_role;
         await api.patch(`/api/auth/employees/${editingId}/`, payload);
         setSuccess(`${form.username}'s details were updated.`);
       } else {
@@ -257,11 +255,10 @@ export default function Employees() {
             </div>
             <div>
               <label className="block text-xs text-muted mb-1.5">Role</label>
-              <select required disabled={!!editingId} className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal disabled:opacity-60"
+              <select required className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
                 value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 {ROLES.map((r) => <option key={r} value={r}>{r.replace("_", " ")}</option>)}
               </select>
-              {editingId && <p className="text-[11px] text-muted mt-1">Role can't be changed from this form.</p>}
             </div>
             <div>
               <label className="block text-xs text-muted mb-1.5">Department</label>
@@ -323,14 +320,13 @@ export default function Employees() {
             {customRoles.length > 0 && (
               <div>
                 <label className="block text-xs text-muted mb-1.5">Custom role</label>
-                <select disabled={!!editingId} className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal disabled:opacity-60"
+                <select className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
                   value={form.custom_role} onChange={(e) => setForm({ ...form, custom_role: e.target.value })}>
                   <option value="">— none —</option>
                   {customRoles.map((r) => (
                     <option key={r.id} value={r.id}>{r.name}</option>
                   ))}
                 </select>
-                {editingId && <p className="text-[11px] text-muted mt-1">Custom role can't be changed from this form.</p>}
               </div>
             )}
             <div className="sm:col-span-2">

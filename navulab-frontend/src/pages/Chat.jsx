@@ -4,6 +4,16 @@ import { useAuth } from "../context/useAuth";
 import { usePaginatedList } from "../hooks/usePaginatedList";
 import { PageHeader, Card, EmptyState, Loading, ErrorBanner, Button, Pagination, Avatar } from "../components/ui";
 
+function getConversationTitle(c, currentUser) {
+  if (!c) return "Conversation";
+  const other = (c.participant_details || []).find((p) => p.id !== currentUser?.id);
+  const otherName = other ? `@${other.username}` : `Chat #${c.id}`;
+  if (c.task_title) {
+    return `${otherName} · Task: ${c.task_title}`;
+  }
+  return `Chat with ${otherName}`;
+}
+
 export default function Chat() {
   const { user } = useAuth();
   const {
@@ -152,10 +162,10 @@ export default function Chat() {
                     active?.id === c.id ? "bg-panel2" : ""
                   }`}
                 >
-                  <Avatar name={c.task_id ? `Task ${c.task_id}` : `Conversation ${c.id}`} />
+                  <Avatar name={getConversationTitle(c, user)} />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-ink truncate">
-                      {c.task_id ? `Task #${c.task_id}` : `Conversation #${c.id}`}
+                      {getConversationTitle(c, user)}
                     </p>
                     <p className="text-xs text-muted mt-0.5 truncate">
                       {c.last_message?.text || "No messages yet"}
@@ -173,9 +183,9 @@ export default function Chat() {
             ) : (
               <>
                 <div className="border-b border-line px-4 py-3 flex items-center gap-2.5">
-                  <Avatar name={active.task_id ? `Task ${active.task_id}` : `Conversation ${active.id}`} />
+                  <Avatar name={getConversationTitle(active, user)} />
                   <p className="text-sm font-semibold text-ink">
-                    {active.task_id ? `Task #${active.task_id}` : `Conversation #${active.id}`}
+                    {getConversationTitle(active, user)}
                   </p>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">

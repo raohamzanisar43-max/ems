@@ -57,15 +57,23 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def check_in(self, request):
         user = request.user
-        obj, _ = Attendance.objects.get_or_create(
+        now = timezone.now()
+        local_time = timezone.localtime(now)
+        cutoff_time = timezone.datetime.strptime("09:30:00", "%H:%M:%S").time()
+        status_value = Attendance.Status.LATE if local_time.time() > cutoff_time else Attendance.Status.PRESENT
+
+        obj, created = Attendance.objects.get_or_create(
             employee_id=user.id,
-            date=timezone.now().date(),
+            date=local_time.date(),
             defaults={
                 "employee_username": user.username,
                 "department_id": user.department_id,
+                "status": status_value,
             },
         )
-        obj.check_in = timezone.now()
+        obj.check_in = now
+        if local_time.time() > cutoff_time:
+            obj.status = Attendance.Status.LATE
         obj.save()
         return Response(AttendanceSerializer(obj).data)
 

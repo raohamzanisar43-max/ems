@@ -39,7 +39,7 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
-    """Used when listing employees - hides sensitive fields."""
+    """Used when listing and updating employees."""
     department_name = serializers.CharField(source="department.name", read_only=True)
     reporting_manager_name = serializers.SerializerMethodField()
     custom_role_name = serializers.CharField(source="custom_role.name", read_only=True)
@@ -54,10 +54,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "date_of_birth", "reporting_manager", "reporting_manager_name",
             "custom_role", "custom_role_name",
         ]
-        # role/custom_role can grant significant access — only settable at account
-        # creation (UserCreateSerializer, with its own checks), never via a plain
-        # update on this serializer, or a user could PATCH their own way to Admin.
-        read_only_fields = ["role", "custom_role"]
+        read_only_fields = []
 
     def get_reporting_manager_name(self, obj):
         if not obj.reporting_manager_id:
@@ -65,12 +62,21 @@ class UserListSerializer(serializers.ModelSerializer):
         mgr = obj.reporting_manager
         return f"{mgr.first_name} {mgr.last_name}".strip() or mgr.username
 
+    def validate_role(self, value):
+        request = self.context.get("request")
+        if request and not (request.user.is_admin or request.user.is_hr):
+            raise serializers.ValidationError("Only HR/Admin can change employee roles.")
+        return value
+
+    def validate_custom_role(self, value):
+        request = self.context.get("request")
+        if request and value is not None and not (request.user.is_admin or request.user.is_hr):
+            raise serializers.ValidationError("Only HR/Admin can assign a custom role.")
+        return value
+
     def validate_department(self, value):
-        # department drives queryset scoping for Tasks/Attendance/Leaves/Reports/
-        # Employees — letting a low-privilege user change their own department
-        # would let them grant themselves visibility into another department.
-        request = self.context["request"]
-        if not request.user.can_manage_employees:
+        request = self.context.get("request")
+        if request and not request.user.can_manage_employees:
             raise serializers.ValidationError("You are not allowed to change department.")
         return value
 
@@ -78,10 +84,10 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     """
     Used by HR/Team Lead to create a new employee account.
-    HR/the team lead sets the password themselves; it's then (via signal) emailed
-    to the employee along with their username.
     """
     password = serializers.CharField(write_only=True)
+    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all(), required=False, allow_null=True)
+    reporting_manager = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -97,9 +103,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_custom_role(self, value):
-        request = self.context["request"]
-        # Custom roles can grant elevated access (payroll, all-departments, etc.) —
-        # only HR/Admin (the same people who can create custom roles) may assign one.
+        request = self.context.get("request")
         if value is not None and not (request.user.is_admin or request.user.is_hr):
             raise serializers.ValidationError("Only HR/Admin can assign a custom role.")
         return value
@@ -109,6 +113,5 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.save()
-        # stash plain password on instance (not saved) so the signal/view can email it
         user._generated_password = password
         return user
