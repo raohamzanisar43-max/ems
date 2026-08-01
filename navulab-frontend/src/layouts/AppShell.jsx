@@ -159,7 +159,7 @@ export default function AppShell() {
               <NavLink to="/" className="flex items-center gap-3.5 group">
                 <div className="relative w-10 h-10 flex items-center justify-center anim-icon-float transition-transform duration-300 group-hover:scale-110">
                   <img
-                    src="/novulabs-mark.png"
+                    src="/static/novulabs-mark.png"
                     alt="Novu Labs"
                     className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(28,115,201,0.25)]"
                   />

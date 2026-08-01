@@ -247,7 +247,7 @@ export default function Login() {
             <div className="flex items-center gap-3 group cursor-pointer">
               <div className="relative w-11 h-11 flex items-center justify-center group-hover:scale-105 transition duration-300">
                 <img
-                  src="/novulabs-mark.png"
+                  src="/static/novulabs-mark.png"
                   alt="NovuLabs"
                   className="w-11 h-11 object-contain transform group-hover:rotate-12 transition duration-300"
                 />
