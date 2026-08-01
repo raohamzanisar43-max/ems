@@ -11,4 +11,6 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: .onrender.com
+        value: .onrender.com,ems.novulabs.net
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://ems.novulabs.net
