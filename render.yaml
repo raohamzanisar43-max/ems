@@ -3,8 +3,8 @@ services:
   - type: web
     name: novulab
     runtime: python
-    buildCommand: cd navulab-frontend && npm install && npm run build && cd ../backend/novulab && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate && python setup_admin.py
-    startCommand: cd backend/novulab && gunicorn config.wsgi:application
+    buildCommand: cd navulab-frontend && npm install && npm run build && cd ../backend/novulab && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+    startCommand: cd backend/novulab && python setup_admin.py && gunicorn config.wsgi:application
     envVars:
       - key: DEBUG
         value: "False"
