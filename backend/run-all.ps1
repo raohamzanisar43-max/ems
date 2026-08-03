@@ -4,14 +4,20 @@
 
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
-$py = Join-Path $root "..\.venv\Scripts\python.exe"
+$py = Join-Path $root "venv\Scripts\python.exe"
+if (-not (Test-Path $py)) {
+    $py = Join-Path $root "..\.venv\Scripts\python.exe"
+}
+if (-not (Test-Path $py)) {
+    $py = "python"
+}
 $logs = Join-Path $root ".run_logs"
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 
 $pidFile = Join-Path $root ".run_pids.txt"
 if (Test-Path $pidFile) { Remove-Item $pidFile }
 
-$appDir = Join-Path $root "novulab"
+$appDir = $root
 $log = Join-Path $logs "novulab.log"
 $p = Start-Process -FilePath $py `
     -ArgumentList "manage.py", "runserver", "127.0.0.1:8080", "--noreload" `

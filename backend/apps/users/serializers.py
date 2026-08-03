@@ -34,7 +34,10 @@ class CustomRoleSerializer(serializers.ModelSerializer):
 class CompanyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyProfile
-        fields = ["id", "name", "address", "phone", "email", "website", "logo_url", "updated_at"]
+        fields = [
+            "id", "name", "address", "phone", "email", "website", "logo_url",
+            "wifi_restriction_enabled", "allowed_wifi_ips", "updated_at",
+        ]
         read_only_fields = ["updated_at"]
 
 

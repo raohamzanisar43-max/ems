@@ -7,8 +7,7 @@ from django.conf import settings
 def spa_index(request):
     possible_paths = [
         settings.BASE_DIR / "staticfiles" / "index.html",
-        settings.BASE_DIR.parent.parent / "navulab-frontend" / "dist" / "index.html",
-        settings.BASE_DIR.parent / "navulab-frontend" / "dist" / "index.html",
+        settings.BASE_DIR.parent / "frontend" / "dist" / "index.html",
     ]
     for p in possible_paths:
         if p.exists():
