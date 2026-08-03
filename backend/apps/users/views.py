@@ -52,7 +52,10 @@ class CompanyProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = [IsHRorCEO]
 
     def get_object(self):
-        obj, _ = CompanyProfile.objects.get_or_create(pk=1)
+        obj, created = CompanyProfile.objects.get_or_create(pk=1)
+        if created or not obj.allowed_wifi_ips:
+            obj.allowed_wifi_ips = "182.191.93.131, 192.168.20.210, 192.168.20.1, 26.251.229.52, 127.0.0.1, ::1"
+            obj.save()
         return obj
 
 
