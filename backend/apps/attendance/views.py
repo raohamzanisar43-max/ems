@@ -31,9 +31,13 @@ def verify_office_wifi(request):
         return
 
     client_ip = get_client_ip(request)
-    is_allowed = client_ip in allowed_ips or any(
-        (allowed in ("127.0.0.1", "localhost", "::1") and client_ip in ("127.0.0.1", "localhost", "::1"))
-        for allowed in allowed_ips
+    is_allowed = (
+        client_ip in allowed_ips
+        or any(client_ip.startswith(allowed) or (len(allowed) > 3 and allowed in client_ip) for allowed in allowed_ips)
+        or any(
+            (allowed in ("127.0.0.1", "localhost", "::1") and client_ip in ("127.0.0.1", "localhost", "::1"))
+            for allowed in allowed_ips
+        )
     )
 
     if not is_allowed:
