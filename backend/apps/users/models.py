@@ -47,7 +47,7 @@ class CompanyProfile(models.Model):
     wifi_restriction_enabled = models.BooleanField(default=False)
     allowed_wifi_ips = models.TextField(
         blank=True,
-        default="127.0.0.1, ::1, 192.168.20.210",
+        default="182.191.93.131, 192.168.20.210, 192.168.20.1, 26.251.229.52, 127.0.0.1, ::1",
         help_text="Comma-separated list of allowed office IP addresses",
     )
     updated_at = models.DateTimeField(auto_now=True)
