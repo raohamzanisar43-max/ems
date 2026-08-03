@@ -59,7 +59,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
-FRONTEND_DIST = BASE_DIR.parent.parent / "navulab-frontend" / "dist"
+FRONTEND_DIST = BASE_DIR.parent / "frontend" / "dist"
 if not FRONTEND_DIST.exists():
     FRONTEND_DIST = BASE_DIR / "frontend_dist"
 

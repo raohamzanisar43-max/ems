@@ -44,6 +44,12 @@ class CompanyProfile(models.Model):
     email = models.EmailField(blank=True)
     website = models.URLField(blank=True)
     logo_url = models.URLField(blank=True)
+    wifi_restriction_enabled = models.BooleanField(default=False)
+    allowed_wifi_ips = models.TextField(
+        blank=True,
+        default="127.0.0.1, ::1, 192.168.20.210",
+        help_text="Comma-separated list of allowed office IP addresses",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

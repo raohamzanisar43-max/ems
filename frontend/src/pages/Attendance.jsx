@@ -42,11 +42,12 @@ export default function Attendance() {
 
   async function checkIn() {
     setBusy(true);
+    setError("");
     try {
       await api.post("/api/attendance/attendance/check_in/");
       reload();
-    } catch {
-      setError("Couldn't check in.");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Couldn't check in.");
     } finally {
       setBusy(false);
     }
@@ -54,11 +55,12 @@ export default function Attendance() {
 
   async function checkOut() {
     setBusy(true);
+    setError("");
     try {
       await api.post("/api/attendance/attendance/check_out/");
       reload();
-    } catch {
-      setError("Couldn't check out — did you check in today?");
+    } catch (err) {
+      setError(err.response?.data?.detail || "Couldn't check out — did you check in today?");
     } finally {
       setBusy(false);
     }

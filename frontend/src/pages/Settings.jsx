@@ -63,6 +63,46 @@ function CompanyProfileCard() {
             />
           </div>
         ))}
+
+        <div className="sm:col-span-2 pt-4 border-t border-line mt-2">
+          <h4 className="font-display text-sm font-semibold text-ink mb-1 flex items-center gap-2">
+            <i className="fa-solid fa-wifi text-signal"></i> Office Wi-Fi Security Settings
+          </h4>
+          <p className="text-xs text-muted mb-3">
+            Restrict employee attendance check-in & check-out to only work when connected to the official Office Wi-Fi / IP address.
+          </p>
+
+          <label className="flex items-center gap-3 cursor-pointer mb-3 select-none">
+            <input
+              type="checkbox"
+              className="w-4 h-4 rounded border-line text-signal focus:ring-signal bg-panel2"
+              checked={form.wifi_restriction_enabled || false}
+              onChange={(e) => setForm({ ...form, wifi_restriction_enabled: e.target.checked })}
+            />
+            <span className="text-sm font-medium text-ink">
+              Require Office Wi-Fi / IP Address for Attendance Check-In & Check-Out
+            </span>
+          </label>
+
+          {form.wifi_restriction_enabled && (
+            <div>
+              <label className="block text-xs text-muted mb-1.5">
+                Allowed Office Wi-Fi IP Addresses (Comma-separated)
+              </label>
+              <textarea
+                rows={2}
+                placeholder="e.g. 127.0.0.1, 192.168.1.1, 203.0.113.45"
+                className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink text-xs font-mono outline-none focus:border-signal"
+                value={form.allowed_wifi_ips || ""}
+                onChange={(e) => setForm({ ...form, allowed_wifi_ips: e.target.value })}
+              />
+              <p className="text-[11px] text-muted mt-1">
+                Tip: Enter <code>127.0.0.1</code> for local development testing, or your office router's Public/Gateway IP address.
+              </p>
+            </div>
+          )}
+        </div>
+
         <div className="sm:col-span-2">
           <Button type="submit" disabled={saving}>
             <i className="fa-solid fa-floppy-disk"></i> {saving ? "Saving..." : "Save changes"}

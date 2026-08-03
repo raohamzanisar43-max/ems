@@ -11,6 +11,38 @@ from .permissions import CanManageAttendance
 from .serializers import AttendanceSerializer
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR', '').strip()
+    return ip
+
+
+def verify_office_wifi(request):
+    from apps.users.models import CompanyProfile
+    profile = CompanyProfile.objects.filter(pk=1).first()
+    if not profile or not profile.wifi_restriction_enabled:
+        return
+
+    allowed_ips = [ip.strip() for ip in (profile.allowed_wifi_ips or "").split(",") if ip.strip()]
+    if not allowed_ips:
+        return
+
+    client_ip = get_client_ip(request)
+    is_allowed = client_ip in allowed_ips or any(
+        (allowed in ("127.0.0.1", "localhost", "::1") and client_ip in ("127.0.0.1", "localhost", "::1"))
+        for allowed in allowed_ips
+    )
+
+    if not is_allowed:
+        from rest_framework.exceptions import PermissionDenied
+        raise PermissionDenied(
+            f"Check-in denied: You must be connected to the Office Wi-Fi network. (Your IP: {client_ip})"
+        )
+
+
 class AttendanceViewSet(viewsets.ModelViewSet):
     """
     - CEO/HR/CTO: see attendance across all departments.
@@ -56,6 +88,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def check_in(self, request):
+        verify_office_wifi(request)
         user = request.user
         now = timezone.now()
         local_time = timezone.localtime(now)
@@ -79,6 +112,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def check_out(self, request):
+        verify_office_wifi(request)
         user = request.user
         try:
             obj = Attendance.objects.get(employee_id=user.id, date=timezone.now().date())

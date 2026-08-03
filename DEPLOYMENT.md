@@ -8,12 +8,12 @@ This repository is configured as a **unified single-service application**. Your 
 
 ### **Build Command**:
 ```bash
-cd navulab-frontend && npm install && npm run build && cd ../backend/novulab && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
 ```
 
 ### **Start Command**:
 ```bash
-cd backend/novulab && gunicorn config.wsgi:application
+cd backend && gunicorn config.wsgi:application
 ```
 
 ---
@@ -26,11 +26,11 @@ cd backend/novulab && gunicorn config.wsgi:application
    - **Root Directory**: Leave **BLANK**
    - **Build Command**:
      ```bash
-     cd navulab-frontend && npm install && npm run build && cd ../backend/novulab && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
+     cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate
      ```
    - **Start Command**:
      ```bash
-     cd backend/novulab && gunicorn config.wsgi:application
+     cd backend && gunicorn config.wsgi:application
      ```
 
 4. Under **Environment Variables**:
