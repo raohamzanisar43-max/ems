@@ -109,12 +109,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 "employee_username": user.username,
                 "department_id": user.department_id,
                 "status": status_value,
+                "check_in": now,
             },
         )
-        obj.check_in = now
-        if local_time.time() > cutoff_time:
-            obj.status = Attendance.Status.LATE
-        obj.save()
+
+        if not created:
+            return Response(
+                {
+                    "detail": "You have already checked in today.",
+                    "data": AttendanceSerializer(obj).data,
+                },
+                status=400,
+            )
+
         return Response(AttendanceSerializer(obj).data)
 
     @action(detail=False, methods=["post"])
@@ -125,6 +132,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             obj = Attendance.objects.get(employee_id=user.id, date=timezone.now().date())
         except Attendance.DoesNotExist:
             return Response({"detail": "No check-in found for today."}, status=400)
+
+        if obj.check_out is not None:
+            return Response(
+                {
+                    "detail": "You have already checked out today.",
+                    "data": AttendanceSerializer(obj).data,
+                },
+                status=400,
+            )
+
         obj.check_out = timezone.now()
         obj.save()
         return Response(AttendanceSerializer(obj).data)
