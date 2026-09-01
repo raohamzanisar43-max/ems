@@ -190,9 +190,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             then the next department — alphabetically, department by
             department.
         Defaults to the current calendar month; pass ?year=YYYY&month=M to
-        export a different one. Check-in/out are local time, split into a
-        clear date + time, department is shown by name, and a blank row
-        separates each group for readability in Excel/Sheets."""
+        export a different one, and ?employee_id=ID to scope the export to
+        a single employee (still subject to the normal department/self
+        scoping above — a Team Lead can't pass another department's id).
+        Check-in/out are local time, split into a clear date + time,
+        department is shown by name, and a blank row separates each group
+        for readability in Excel/Sheets."""
         user = request.user
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -208,6 +211,14 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         queryset = queryset.filter(date__year=year, date__month=month)
 
+        raw_employee_id = request.query_params.get("employee_id")
+        filename_suffix = ""
+        if raw_employee_id and raw_employee_id.isdigit():
+            queryset = queryset.filter(employee_id=int(raw_employee_id))
+            username = queryset.values_list("employee_username", flat=True).first()
+            if username:
+                filename_suffix = f"_{username}"
+
         if user.can_see_all_departments:
             queryset = queryset.order_by("department_name", "employee_display_name", "date")
 
@@ -221,7 +232,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (
-            f'attachment; filename="attendance_{year:04d}-{month:02d}.csv"'
+            f'attachment; filename="attendance_{year:04d}-{month:02d}{filename_suffix}.csv"'
         )
         writer = csv.writer(response)
         writer.writerow(
