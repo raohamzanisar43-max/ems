@@ -5,20 +5,6 @@ import { useAuth } from "../context/useAuth";
 import { useShellToast } from "../layouts/ShellToastContext";
 import { Card, Loading, StatusPill } from "../components/ui";
 
-const STAT_TONE_BORDER = {
-  cyan: "border-electric-cyan/30",
-  amber: "border-amber-500/30",
-  emerald: "border-emerald-500/30",
-  purple: "border-purple-500/30",
-};
-
-const STAT_TONE_BOX = {
-  cyan: "bg-electric-cyan/10 text-electric-cyan",
-  amber: "bg-amber-500/10 text-amber-400",
-  emerald: "bg-emerald-500/10 text-emerald-400",
-  purple: "bg-purple-500/10 text-purple-300",
-};
-
 const ROLE_ACCESS_LABEL = {
   ADMIN: "Full Admin Access",
   CEO: "Full Admin Access",
@@ -30,56 +16,15 @@ const ROLE_ACCESS_LABEL = {
 };
 
 const QUICK_LINKS = [
-  {
-    to: "/tasks",
-    label: "Go to Tasks",
-    hint: "Manage daily items",
-    icon: "fa-solid fa-bars-staggered",
-    tone: "primary",
-  },
-  {
-    to: "/attendance",
-    label: "Mark Attendance",
-    hint: "Log work hours",
-    icon: "fa-solid fa-user-check",
-    tone: "emerald",
-  },
-  {
-    to: "/reports",
-    label: "Submit Daily Report",
-    hint: "Send evening update",
-    icon: "fa-solid fa-paper-plane",
-    tone: "purple",
-  },
-  {
-    to: "/chat",
-    label: "Open Chat",
-    hint: "Team discussions",
-    icon: "fa-solid fa-comments",
-    tone: "sky",
-  },
+  { to: "/tasks", label: "Go to Tasks", hint: "Manage daily items", icon: "fa-solid fa-bars-staggered" },
+  { to: "/attendance", label: "Mark Attendance", hint: "Log work hours", icon: "fa-solid fa-user-check" },
+  { to: "/reports", label: "Submit Daily Report", hint: "Send evening update", icon: "fa-solid fa-paper-plane" },
+  { to: "/chat", label: "Open Chat", hint: "Team discussions", icon: "fa-solid fa-comments" },
 ];
 
-const TONE_ICON = {
-  primary: "btn-primary-gradient",
-  emerald: "bg-emerald-500 text-navy-900 shadow-emerald-500/20",
-  purple: "bg-purple-500 text-white shadow-purple-500/20",
-  sky: "bg-electric-sky text-navy-900 shadow-electric-sky/20",
-};
-
-const TONE_HOVER_BORDER = {
-  primary: "hover:border-electric-cyan/60",
-  emerald: "hover:border-emerald-400/60",
-  purple: "hover:border-purple-400/60",
-  sky: "hover:border-electric-sky/60",
-};
-
-const TONE_ARROW_HOVER = {
-  primary: "group-hover:text-electric-cyan",
-  emerald: "group-hover:text-emerald-400",
-  purple: "group-hover:text-purple-400",
-  sky: "group-hover:text-electric-sky",
-};
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function DepartmentBoard() {
   const [loading, setLoading] = useState(true);
@@ -108,7 +53,7 @@ function DepartmentBoard() {
         setEmployees(emps);
         setTasks(tsks);
 
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayStr();
         const byEmployee = {};
         atts.filter((a) => a && a.date === today).forEach((a) => {
           byEmployee[a.employee_id] = a.status;
@@ -186,6 +131,28 @@ function DepartmentBoard() {
   );
 }
 
+function StatTile({ to, icon, kicker, label, value }) {
+  return (
+    <Link
+      to={to}
+      className="border border-line rounded-xl p-4 flex flex-col gap-3 hover:border-signal/40 hover:shadow-panel transition group"
+    >
+      <div className="flex items-center justify-between">
+        <span className="w-9 h-9 rounded-lg bg-signal/10 text-signal flex items-center justify-center text-sm">
+          <i className={icon}></i>
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-wide text-muted bg-panel2 px-2 py-0.5 rounded-full">
+          {kicker}
+        </span>
+      </div>
+      <div>
+        <p className="text-2xl font-black text-ink leading-none">{value}</p>
+        <p className="text-xs text-muted mt-1.5">{label}</p>
+      </div>
+    </Link>
+  );
+}
+
 export default function Overview() {
   const { user, canSeeAllDepartments } = useAuth();
   const showToast = useShellToast();
@@ -193,36 +160,52 @@ export default function Overview() {
   const [departmentName, setDepartmentName] = useState(null);
   const [stats, setStats] = useState({
     tasksTotal: 0,
-    tasksPending: 0,
     tasksCompleted: 0,
-    reportsPending: 0,
+    reportsTotal: 0,
+    leavesTotal: 0,
+    attendanceThisMonth: 0,
   });
+  const [todayAttendance, setTodayAttendance] = useState(null);
+  const [attendanceBusy, setAttendanceBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [tasksResult, reportsResult, meResult] = await Promise.allSettled([
+        const [tasksResult, reportsResult, leavesResult, attendanceResult, meResult] = await Promise.allSettled([
           api.get("/api/tasks/tasks/", { params: { page_size: 500 } }),
-          api.get("/api/reports/reports/", { params: { page_size: 500 } }),
+          api.get("/api/reports/reports/", { params: { page_size: 1 } }),
+          api.get("/api/leaves/leaves/", { params: { page_size: 1 } }),
+          api.get("/api/attendance/attendance/", { params: { page_size: 100 } }),
           api.get("/api/auth/employees/me/"),
         ]);
 
         const tasksData = tasksResult.status === "fulfilled" ? tasksResult.value.data : null;
         const reportsData = reportsResult.status === "fulfilled" ? reportsResult.value.data : null;
+        const leavesData = leavesResult.status === "fulfilled" ? leavesResult.value.data : null;
+        const attendanceData = attendanceResult.status === "fulfilled" ? attendanceResult.value.data : null;
         const meData = meResult.status === "fulfilled" ? meResult.value.data : null;
 
         const tasks = Array.isArray(tasksData?.results) ? tasksData.results : (Array.isArray(tasksData) ? tasksData : []);
-        const reports = Array.isArray(reportsData?.results) ? reportsData.results : (Array.isArray(reportsData) ? reportsData : []);
+        const attendanceRows = Array.isArray(attendanceData?.results)
+          ? attendanceData.results
+          : (Array.isArray(attendanceData) ? attendanceData : []);
+
+        const today = todayStr();
+        const monthPrefix = today.slice(0, 7);
+        const mine = attendanceRows.filter((a) => a && a.employee_id === user?.id);
+        const todayRow = mine.find((a) => a.date === today) || null;
 
         if (!cancelled) {
           setStats({
             tasksTotal: tasks.length,
-            tasksPending: tasks.filter((t) => t && t.status === "PENDING").length,
             tasksCompleted: tasks.filter((t) => t && t.status === "COMPLETED").length,
-            reportsPending: reports.filter((r) => r && r.review_status === "PENDING_REVIEW").length,
+            reportsTotal: typeof reportsData?.count === "number" ? reportsData.count : 0,
+            leavesTotal: typeof leavesData?.count === "number" ? leavesData.count : 0,
+            attendanceThisMonth: mine.filter((a) => a.date?.startsWith(monthPrefix)).length,
           });
           setDepartmentName(meData?.department_name || null);
+          setTodayAttendance(todayRow);
         }
       } catch {
         // fail-safe fallback
@@ -234,169 +217,170 @@ export default function Overview() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [user?.id]);
+
+  async function toggleAttendance() {
+    setAttendanceBusy(true);
+    try {
+      if (todayAttendance && !todayAttendance.check_out) {
+        const { data } = await api.post("/api/attendance/attendance/check_out/");
+        setTodayAttendance(data);
+        showToast("Checked out — see you tomorrow!", "success");
+      } else if (!todayAttendance) {
+        const { data } = await api.post("/api/attendance/attendance/check_in/");
+        setTodayAttendance(data);
+        showToast("Checked in for today.", "success");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.detail || "Couldn't update attendance.", "error");
+    } finally {
+      setAttendanceBusy(false);
+    }
+  }
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const accessLabel = ROLE_ACCESS_LABEL[user?.role] || "Standard Employee Access";
+  const isCheckedIn = Boolean(todayAttendance);
+  const isCheckedOut = Boolean(todayAttendance?.check_out);
+  const completionPct = stats.tasksTotal > 0 ? Math.round((stats.tasksCompleted / stats.tasksTotal) * 100) : 0;
 
   return (
     <div className="space-y-8">
       {/* Welcome banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Card className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-outfit text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-slate-900 flex items-center gap-2">
-            <span>{greeting},</span>
-            <span className="capitalize" style={{ color: "#0EA5C7" }}>
-              {user?.username}
-            </span>
-            <span className="inline-block animate-wave origin-bottom-right">👋</span>
+          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight text-ink flex items-center gap-2">
+            <span>{greeting}, {user?.username}</span>
+            <span className="inline-block">👋</span>
           </h2>
-          <p className="text-xs sm:text-sm text-electric-sky mt-1">
-            Here is an overview of your operational sprint metrics for today.
-          </p>
+          <p className="text-sm text-muted mt-1">Here is an overview of your operational metrics for today.</p>
         </div>
-        <div>
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-bold shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>Ops Server Online</span>
+        <div className="flex items-center gap-3 shrink-0">
+          <span
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border ${
+              isCheckedIn
+                ? "bg-mint/10 border-mint/30 text-mint"
+                : "bg-panel2 border-line text-muted"
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isCheckedIn ? "bg-mint" : "bg-muted"}`}></span>
+            {isCheckedOut ? "Checked Out" : isCheckedIn ? "Checked In" : "Not Checked In"}
           </span>
+          {!isCheckedOut && (
+            <button
+              onClick={toggleAttendance}
+              disabled={attendanceBusy}
+              className="px-4 py-1.5 rounded-full text-xs font-bold bg-signal text-white hover:bg-primary transition disabled:opacity-60"
+            >
+              {attendanceBusy ? "…" : isCheckedIn ? "Check Out" : "Check In"}
+            </button>
+          )}
         </div>
-      </div>
+      </Card>
 
       {loading ? (
         <Loading />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-5">
-          {/* Your Tasks */}
-          <div className="lg:col-span-8 glass-card rounded-3xl p-6 sm:p-7 space-y-6">
-            <div className="flex items-center justify-between border-b border-electric-cyan/20 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-electric-azure/20 text-electric-cyan flex items-center justify-center text-sm anim-icon-pulse">
-                  <i className="fa-solid fa-list-check"></i>
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-white">Your Tasks</h3>
-                  <p className="text-[11px] text-electric-sky">Task breakdown for your current operational sprint</p>
-                </div>
-              </div>
-              <button
-                onClick={() => showToast("Tasks synced with server", "success")}
-                className="text-xs font-bold text-electric-cyan hover:underline flex items-center gap-1 group"
-              >
-                <i className="fa-solid fa-rotate-right text-[10px] group-hover:rotate-180 transition-transform duration-500"></i> Sync
-              </button>
+        <>
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-extrabold text-ink">Your Tasks</h2>
+              <p className="text-xs text-muted">Task breakdown for your current operational sprint</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: stats.tasksTotal, label: "Total", hint: "All tasks", tone: "cyan" },
-                { value: stats.tasksPending, label: "Pending", hint: "Needs action", tone: "amber" },
-                { value: stats.tasksCompleted, label: "Completed", hint: "Done", tone: "emerald" },
-                { value: stats.reportsPending, label: "Awaiting Review", hint: "Reports", tone: "purple" },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className={`p-3.5 rounded-2xl bg-navy-800/80 border ${STAT_TONE_BORDER[s.tone]} flex items-center gap-3 min-w-0 overflow-hidden transition-all duration-300`}
-                >
-                  <div className={`w-10 h-10 rounded-xl ${STAT_TONE_BOX[s.tone]} flex items-center justify-center text-lg font-black shrink-0`}>
-                    {s.value}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="block text-xs font-extrabold text-white truncate">{s.label}</span>
-                    <span className="block text-[10px] text-slate-400 truncate">{s.hint}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatTile to="/attendance" icon="fa-solid fa-calendar-check" kicker="Total" label="Attendance (this month)" value={stats.attendanceThisMonth} />
+              <StatTile to="/leaves" icon="fa-solid fa-calendar-minus" kicker="Total" label="Leaves" value={stats.leavesTotal} />
+              <StatTile to="/tasks" icon="fa-solid fa-circle-check" kicker="Tasks" label="Done" value={stats.tasksCompleted} />
+              <StatTile to="/reports" icon="fa-solid fa-file-invoice" kicker="Daily Report" label="Reports" value={stats.reportsTotal} />
             </div>
-
             {stats.tasksTotal > 0 && (
               <div>
-                <div className="flex items-center justify-between text-[11px] font-bold text-electric-sky mb-1.5">
-                  <span>Completion rate</span>
-                  <span>{Math.round((stats.tasksCompleted / stats.tasksTotal) * 100)}%</span>
+                <div className="flex items-center justify-between text-xs font-bold text-muted mb-1.5">
+                  <span>Task completion rate</span>
+                  <span>{completionPct}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-navy-800/80 border border-electric-cyan/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-electric-azure to-electric-cyan transition-all duration-700"
-                    style={{ width: `${Math.round((stats.tasksCompleted / stats.tasksTotal) * 100)}%` }}
-                  ></div>
+                <div className="h-2 rounded-full bg-panel2 overflow-hidden">
+                  <div className="h-full rounded-full bg-signal transition-all duration-700" style={{ width: `${completionPct}%` }}></div>
                 </div>
               </div>
             )}
           </div>
 
           {/* Your Department */}
-          <div className="lg:col-span-4 glass-card rounded-3xl p-6 sm:p-7 space-y-5">
-            <div className="flex items-center gap-3 border-b border-electric-cyan/20 pb-4">
-              <div className="w-9 h-9 rounded-xl bg-electric-sky/15 text-electric-cyan flex items-center justify-center text-sm anim-icon-float shrink-0">
+          <Card className="p-5 sm:p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-lg bg-signal/10 text-signal flex items-center justify-center text-sm shrink-0">
                 <i className="fa-solid fa-building-user"></i>
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-base font-extrabold text-white">Your Department</h3>
-                <p className="text-[11px] text-electric-sky">Assigned organizational division</p>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-navy-800/90 border border-electric-cyan/20">
-              <span className="text-[11px] font-bold text-electric-sky uppercase tracking-wide">Division</span>
-              <p className="text-lg font-black text-white leading-snug mt-1 break-words">
-                {departmentName || (canSeeAllDepartments ? "All Departments" : "Unassigned")}
-              </p>
-              <span className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-extrabold border border-emerald-500/30 whitespace-nowrap">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                Active Unit
               </span>
+              <div className="min-w-0">
+                <h3 className="text-base font-extrabold text-ink">Your Department</h3>
+                <p className="text-xs text-muted">Assigned organizational division</p>
+              </div>
             </div>
 
-            <div className="text-[11px] text-slate-400 flex items-center gap-2 pt-1 border-t border-electric-cyan/10">
-              <i className="fa-solid fa-shield-halved text-emerald-400 shrink-0"></i>
-              <span>Role Permissions: {accessLabel}</span>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-sidebar text-white">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-300">Division</span>
+                <p className="text-lg font-black leading-snug mt-1 break-words">
+                  {departmentName || (canSeeAllDepartments ? "All Departments" : "Unassigned")}
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-mint/15 text-mint text-[10px] font-extrabold border border-mint/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-mint"></span>
+                  Active Unit
+                </span>
+              </div>
+              <div className="p-4 rounded-xl border border-line bg-panel2 flex flex-col justify-center">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted">Active Unit</span>
+                <p className="text-sm font-bold text-ink mt-1">Role Permissions</p>
+                <span className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted">
+                  <i className="fa-solid fa-shield-halved text-mint"></i>
+                  {accessLabel}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-extrabold text-ink flex items-center gap-2">
+                <i className="fa-solid fa-bolt text-signal text-sm"></i>
+                <span>Quick Links</span>
+              </h2>
+              <span className="text-xs text-muted font-medium">Fast action triggers</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {QUICK_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="border border-line rounded-xl p-4 flex items-center justify-between group hover:border-signal/40 hover:shadow-panel transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-xl bg-signal/10 text-signal flex items-center justify-center text-sm shrink-0">
+                      <i className={link.icon}></i>
+                    </span>
+                    <div>
+                      <span className="font-bold text-sm text-ink block">{link.label}</span>
+                      <span className="text-[10px] text-muted">{link.hint}</span>
+                    </div>
+                  </div>
+                  <i className="fa-solid fa-arrow-right text-xs text-muted group-hover:text-signal group-hover:translate-x-1 transition"></i>
+                </Link>
+              ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Quick Links */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-            <i className="fa-solid fa-bolt text-electric-cyan text-sm animate-bounce"></i>
-            <span>Quick Links</span>
-          </h2>
-          <span className="text-xs text-electric-sky font-medium">Fast action triggers</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {QUICK_LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`glass-card rounded-2xl p-5 flex items-center justify-between group transition duration-300 transform hover:-translate-y-1.5 ${TONE_HOVER_BORDER[link.tone]}`}
-            >
-              <div className="flex items-center gap-3.5">
-                <div
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center text-sm shadow-lg group-hover:rotate-12 transition duration-300 ${TONE_ICON[link.tone]}`}
-                >
-                  <i className={link.icon}></i>
-                </div>
-                <div>
-                  <span className="font-bold text-sm text-white block">{link.label}</span>
-                  <span className="text-[10px] text-electric-sky">{link.hint}</span>
-                </div>
-              </div>
-              <i className={`fa-solid fa-arrow-right text-xs text-slate-400 ${TONE_ARROW_HOVER[link.tone]} group-hover:translate-x-1.5 transition duration-200`}></i>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Real department drill-down, kept for HR/CEO/CTO/Admin */}
-      {canSeeAllDepartments && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-extrabold text-white">By department</h2>
-          <DepartmentBoard />
-        </div>
+          {/* Real department drill-down, kept for HR/CEO/CTO/Admin */}
+          {canSeeAllDepartments && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-extrabold text-ink">By department</h2>
+              <DepartmentBoard />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -20,7 +20,10 @@ export function AuthProvider({ children }) {
       const claims = decodeJWT(data.access);
 
       const userInfo = {
-        id: claims.user_id,
+        // SimpleJWT always stringifies the user_id claim; every id comparison
+        // in the app (employee_id === user.id, assigned_to_id === user.id, ...)
+        // needs a real number to match the API's numeric ids.
+        id: Number(claims.user_id),
         username: claims.username,
         email: claims.email,
         role: claims.role,

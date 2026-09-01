@@ -94,7 +94,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-6 w-full bg-signal hover:bg-signal/90 disabled:opacity-50 text-ink font-semibold rounded-lg py-2.5 transition-colors"
+                className="mt-6 w-full bg-signal hover:bg-primary disabled:opacity-50 text-white font-semibold rounded-lg py-2.5 transition-colors"
               >
                 {loading ? "Resetting…" : "Reset password"}
               </button>

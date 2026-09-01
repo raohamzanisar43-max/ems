@@ -72,6 +72,42 @@ export default function Reports() {
 
       <ErrorBanner message={error} />
 
+      {!loading && reports.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <Card className="p-4 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-lg bg-signal/10 text-signal flex items-center justify-center text-sm shrink-0">
+              <i className="fa-solid fa-layer-group"></i>
+            </span>
+            <div>
+              <p className="text-lg font-black text-ink leading-none">{count}</p>
+              <p className="text-[11px] text-muted mt-1">Total submissions</p>
+            </div>
+          </Card>
+          <Card className="p-4 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-lg bg-amber/10 text-amber flex items-center justify-center text-sm shrink-0">
+              <i className="fa-solid fa-hourglass-half"></i>
+            </span>
+            <div>
+              <p className="text-lg font-black text-ink leading-none">
+                {reports.filter((r) => r.review_status === "PENDING_REVIEW").length}
+              </p>
+              <p className="text-[11px] text-muted mt-1">Pending approval (page)</p>
+            </div>
+          </Card>
+          <Card className="p-4 flex items-center gap-3">
+            <span className="w-10 h-10 rounded-lg bg-mint/10 text-mint flex items-center justify-center text-sm shrink-0">
+              <i className="fa-solid fa-circle-check"></i>
+            </span>
+            <div>
+              <p className="text-lg font-black text-ink leading-none">
+                {reports.filter((r) => r.review_status === "REVIEWED").length}
+              </p>
+              <p className="text-[11px] text-muted mt-1">Reviewed (page)</p>
+            </div>
+          </Card>
+        </div>
+      )}
+
       {showForm && (
         <Card className="p-5 mb-6">
           <form onSubmit={handleSubmit} className="space-y-4">

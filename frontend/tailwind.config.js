@@ -5,28 +5,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: "#F4F6FA",    // page background
-        ink: "#1F2430",       // primary text (dark navy)
-        panel: "#FFFFFF",     // card / panel surface
-        panel2: "#F3F5F9",    // raised / secondary surface
-        line: "#E7EAF1",      // hairline borders
-        muted: "#8A93A6",     // secondary text
-        signal: "#FF7A45",    // warm signal accent (status/action)
-        purple: "#7C6FE0",    // stat-card accent
-        blue: "#3B82F6",      // stat-card accent
-        mint: "#22C55E",      // positive / complete
-        amber: "#F5B94D",     // pending / warning
-        rose: "#EF4444",      // overdue / danger
+        // NovuLabs light theme (matches the Login/Dashboard/Attendance mockups).
+        // Token *names* are kept stable so every existing page/component that
+        // already references them (bg-panel, text-ink, text-muted, bg-signal,
+        // text-mint/amber/rose, ...) picks up the new palette automatically.
+        canvas: "#F6FAFE",     // page background
+        ink: "#171C1F",        // primary text (on-surface)
+        panel: "#FFFFFF",      // card / panel surface
+        panel2: "#F0F4F8",     // raised / secondary surface
+        line: "#DFE3E7",       // hairline borders
+        muted: "#414752",      // secondary text (on-surface-variant)
+        signal: "#005FB7",     // primary accent (buttons/links/active states)
+        purple: "#7C6FE0",     // stat-card accent
+        blue: "#3B82F6",       // stat-card accent / info
+        mint: "#10B981",       // positive / present / complete
+        amber: "#F59E0B",      // pending / late / warning
+        rose: "#EF4444",       // absent / overdue / danger
+        primary: "#00478C",    // darker primary, for hovers/gradients
+        sidebar: "#001E3C",    // dark navy sidebar background
         // Login page (NovuLabs auth card) palette
         brand: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          500: "#7c3aed",
-          600: "#6d28d9",
-          700: "#5b21b6",
-          800: "#4c1d95",
-          900: "#3b0764",
+          50: "#f0f7ff",
+          100: "#e0effe",
+          200: "#c9dbff",
+          500: "#005FB7",
+          600: "#00478C",
+          700: "#00366b",
+          800: "#00274d",
+          900: "#001b3c",
         },
         electric: {
           azure: "#1C73C9",
@@ -45,10 +51,10 @@ export default {
         },
       },
       fontFamily: {
-        display: ["'Space Grotesk'", "sans-serif"],
-        body: ["'Inter'", "sans-serif"],
+        display: ["'Hanken Grotesk'", "sans-serif"],
+        body: ["'Hanken Grotesk'", "sans-serif"],
         mono: ["'JetBrains Mono'", "monospace"],
-        outfit: ["'Outfit'", "sans-serif"],
+        outfit: ["'Hanken Grotesk'", "sans-serif"],
       },
       boxShadow: {
         panel: "0 1px 2px 0 rgba(31,36,48,0.04), 0 1px 3px 0 rgba(31,36,48,0.06)",

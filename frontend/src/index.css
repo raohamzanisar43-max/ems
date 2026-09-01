@@ -17,9 +17,9 @@ html, body {
 }
 
 body {
-  background-color: #F4F6FA;
-  color: #1F2430;
-  font-family: 'Inter', sans-serif;
+  background-color: #F6FAFE;
+  color: #171C1F;
+  font-family: 'Hanken Grotesk', 'Inter', sans-serif;
 }
 
 .font-display {
@@ -35,6 +35,6 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid #FF7A45;
+  outline: 2px solid #005FB7;
   outline-offset: 2px;
 }
