@@ -1,5 +1,7 @@
 import csv
 
+from django.db.models import CharField, F, OuterRef, Subquery, Value
+from django.db.models.functions import Coalesce, Concat, NullIf, Trim
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets, permissions
@@ -60,14 +62,44 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
     permission_classes = [permissions.IsAuthenticated, CanManageAttendance]
 
+    def _annotate_and_order(self, qs):
+        """Attach a display-ready department name + employee name (both derived
+        via subquery since Attendance only stores raw employee_id/department_id,
+        not FKs) and order consistently everywhere: date, then employee name,
+        then team/department name — so same-date rows never come back "mixed"."""
+        from apps.users.models import Department, User
+
+        department_name_sq = Department.objects.filter(
+            pk=OuterRef("department_id")
+        ).values("name")[:1]
+        full_name_sq = User.objects.filter(pk=OuterRef("employee_id")).annotate(
+            full_name=Trim(Concat("first_name", Value(" "), "last_name"))
+        ).values("full_name")[:1]
+
+        qs = qs.annotate(
+            department_name=Coalesce(
+                Subquery(department_name_sq, output_field=CharField()), Value("")
+            ),
+            employee_full_name=Coalesce(
+                Subquery(full_name_sq, output_field=CharField()), Value("")
+            ),
+        ).annotate(
+            employee_display_name=Coalesce(
+                NullIf(F("employee_full_name"), Value("")), F("employee_username")
+            )
+        )
+        return qs.order_by("-date", "employee_display_name", "department_name")
+
     def get_queryset(self):
         user = self.request.user
         qs = Attendance.objects.all()
         if user.can_see_all_departments:
-            return qs
-        if user.is_team_lead:
-            return qs.filter(department_id=user.department_id)
-        return qs.filter(employee_id=user.id)
+            pass
+        elif user.is_team_lead:
+            qs = qs.filter(department_id=user.department_id)
+        else:
+            qs = qs.filter(employee_id=user.id)
+        return self._annotate_and_order(qs)
 
     def _resolve_target(self, requester, employee_id):
         from apps.users.models import User
@@ -148,22 +180,80 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def export_csv(self, request):
-        """Same department-scoped queryset as the list view, as a CSV download."""
+        """A month's attendance as a CSV download, grouped for readability
+        rather than just date-sorted:
+          - Team Lead (and anyone else scoped to a single department, or an
+            employee downloading only their own rows): one employee's full
+            month, in date order, then the next employee — alphabetically.
+          - Anyone who can see all departments (CEO/HR/Admin/CTO): one
+            department's employees (each employee's full month together),
+            then the next department — alphabetically, department by
+            department.
+        Defaults to the current calendar month; pass ?year=YYYY&month=M to
+        export a different one. Check-in/out are local time, split into a
+        clear date + time, department is shown by name, and a blank row
+        separates each group for readability in Excel/Sheets."""
+        user = request.user
         queryset = self.filter_queryset(self.get_queryset())
+
+        today_local = timezone.localtime(timezone.now()).date()
+        year = today_local.year
+        month = today_local.month
+        raw_year = request.query_params.get("year")
+        raw_month = request.query_params.get("month")
+        if raw_year and raw_year.isdigit():
+            year = int(raw_year)
+        if raw_month and raw_month.isdigit() and 1 <= int(raw_month) <= 12:
+            month = int(raw_month)
+
+        queryset = queryset.filter(date__year=year, date__month=month)
+
+        if user.can_see_all_departments:
+            queryset = queryset.order_by("department_name", "employee_display_name", "date")
+
+            def group_key(record):
+                return (record.department_id, record.employee_id)
+        else:
+            queryset = queryset.order_by("employee_display_name", "date")
+
+            def group_key(record):
+                return record.employee_id
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (
-            f'attachment; filename="attendance_{timezone.now().date()}.csv"'
+            f'attachment; filename="attendance_{year:04d}-{month:02d}.csv"'
         )
         writer = csv.writer(response)
-        writer.writerow(["Employee", "Department ID", "Date", "Check In", "Check Out", "Status"])
-        for record in queryset.order_by("-date", "employee_username"):
+        writer.writerow(
+            ["Employee", "Username", "Department", "Date", "Check In", "Check Out", "Hours", "Location", "Status"]
+        )
+
+        sentinel = object()
+        previous_key = sentinel
+        for record in queryset:
+            key = group_key(record)
+            if previous_key is not sentinel and key != previous_key:
+                writer.writerow([])
+            previous_key = key
+
+            check_in_local = timezone.localtime(record.check_in) if record.check_in else None
+            check_out_local = timezone.localtime(record.check_out) if record.check_out else None
+            hours = ""
+            if check_in_local and check_out_local:
+                total_minutes = int((check_out_local - check_in_local).total_seconds() // 60)
+                if total_minutes >= 0:
+                    h, m = divmod(total_minutes, 60)
+                    hours = f"{h}h {m:02d}m"
+
             writer.writerow([
+                record.employee_display_name,
                 record.employee_username,
-                record.department_id or "",
-                record.date,
-                record.check_in.isoformat() if record.check_in else "",
-                record.check_out.isoformat() if record.check_out else "",
-                record.status,
+                record.department_name or "—",
+                record.date.strftime("%Y-%m-%d"),
+                check_in_local.strftime("%I:%M:%S %p") if check_in_local else "—",
+                check_out_local.strftime("%I:%M:%S %p") if check_out_local else "—",
+                hours or "—",
+                record.get_location_display(),
+                record.get_status_display(),
             ])
         return response
