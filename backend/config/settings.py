@@ -157,6 +157,9 @@ STORAGES = {
     },
 }
 
+# Prevent WhiteNoise from crashing collectstatic when 3rd party packages (like Jazzmin) missing .map sourcemaps
+WHITENOISE_MANIFEST_STRICT = False
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
