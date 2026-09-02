@@ -1,15 +1,14 @@
 import axios from "axios";
 
-// Base URL reads from environment variable, window.location.origin in production, or local server
+// In development, keep requests relative so Vite can proxy /api to Django.
+// In production, the app is served from the Django backend, so same-origin is correct.
 const GATEWAY_URL = (
   import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== "undefined" && !window.location.origin.includes("127.0.0.1") && !window.location.origin.includes("localhost")
-    ? window.location.origin
-    : "http://127.0.0.1:8080")
+  (typeof window !== "undefined" && window.location.port !== "5173" ? window.location.origin : "")
 ).replace(/\/$/, "");
 
 export const api = axios.create({
-  baseURL: GATEWAY_URL,
+  baseURL: GATEWAY_URL || undefined,
 });
 
 // Attach the JWT access token to every outgoing request.

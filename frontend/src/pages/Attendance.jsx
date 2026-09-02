@@ -3,6 +3,96 @@ import api from "../api/client";
 import { useAuth } from "../context/useAuth";
 import { PageHeader, Card, StatusPill, EmptyState, Loading, ErrorBanner, Button, Avatar } from "../components/ui";
 
+const ATTENDANCE_STYLES = `
+.attendance-page { width: 100%; }
+.attendance-welcome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 114px;
+  padding: 24px 26px;
+  margin-bottom: 18px;
+  background: #fff;
+  border: 1px solid #c1c6d4;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,.05);
+  overflow: hidden;
+}
+.attendance-welcome::after {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: -90px;
+  top: -150px;
+  border-radius: 50%;
+  background: rgba(0,95,183,.08);
+  filter: blur(28px);
+}
+.attendance-welcome h2 { position: relative; z-index: 1; margin: 0; font-size: 25px; line-height: 1.2; font-weight: 700; color: #171c1f; }
+.attendance-welcome p { position: relative; z-index: 1; margin: 7px 0 0; font-size: 14px; color: #414752; }
+.attendance-current-status { position: relative; z-index: 2; text-align: right; flex: 0 0 auto; }
+.attendance-current-status > p { margin: 0; color: #00478c; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.attendance-status-pill {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 6px;
+  padding: 7px 12px; border-radius: 999px; font-size: 14px; font-weight: 500;
+}
+.attendance-status-success { color: #10b981; background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.3); }
+.attendance-status-neutral { color: #727783; background: #f0f4f8; border: 1px solid #c1c6d4; }
+.attendance-status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.attendance-status-success .attendance-status-dot { animation: attendance-pulse 1.8s ease-in-out infinite; box-shadow: 0 0 8px rgba(16,185,129,.75); }
+@keyframes attendance-pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.7); opacity: .65; } }
+
+.attendance-actions { display: flex; justify-content: flex-end; align-items: center; gap: 9px; flex-wrap: wrap; margin-bottom: 18px; }
+.attendance-metrics { margin-bottom: 2px; }
+.attendance-flip-card { height: 138px; perspective: 1000px; }
+.attendance-flip-inner {
+  position: relative; width: 100%; height: 100%;
+  transition: transform .6s cubic-bezier(.4,0,.2,1);
+  transform-style: preserve-3d; cursor: pointer;
+}
+.attendance-flip-card:hover .attendance-flip-inner { transform: rotateY(180deg); }
+.attendance-flip-face {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: #fff; border: 1px solid #c1c6d4; border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,.05);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; transition: box-shadow .3s ease, border-color .3s ease;
+}
+.attendance-flip-card:hover .attendance-flip-face { border-color: rgba(0,71,140,.3); box-shadow: 0 10px 30px -5px rgba(0,0,0,.1); }
+.attendance-flip-back { transform: rotateY(180deg); }
+.attendance-tile-icon { color: #00478c; font-size: 31px; line-height: 1; margin-bottom: 18px; }
+.attendance-tile-label { margin: 0; color: #414752; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.attendance-tile-value { color: #171c1f; font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -.02em; }
+.attendance-tile-hint { margin: 7px 0 0; color: #414752; font-size: 14px; }
+.attendance-filter {
+  padding: 6px 11px; border-radius: 999px; border: 1px solid #c1c6d4;
+  background: #fff; color: #414752; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: all .2s ease;
+}
+.attendance-filter:hover { background: #f0f4f8; color: #171c1f; }
+.attendance-filter.active { color: #00478c; border-color: #00478c; background: rgba(0,95,183,.08); box-shadow: 0 0 10px rgba(0,95,183,.1); }
+.attendance-report-card { min-width: 0; }
+.attendance-table th { padding: 0 8px 10px; font-weight: 600; }
+.attendance-table td { padding: 12px 8px; font-size: 13px; }
+.attendance-table tbody tr { transition: background .2s ease; }
+.attendance-table tbody tr:hover { background: #f6fafe; }
+@media (max-width: 768px) {
+  .attendance-welcome { align-items: flex-start; flex-direction: column; }
+  .attendance-current-status { text-align: left; }
+  .attendance-actions { justify-content: flex-start; }
+  .attendance-flip-card { height: 126px; }
+  .attendance-tile-icon { margin-bottom: 12px; }
+  .attendance-tile-value { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .attendance-flip-inner { transition: none; }
+  .attendance-status-success .attendance-status-dot { animation: none; }
+}
+`;
+
 const STATUS_DOT = {
   PRESENT: "bg-mint",
   LATE: "bg-amber",
@@ -92,14 +182,17 @@ function MiniCalendar({ year, month, recordsByDate, onPrev, onNext }) {
             <div
               key={dateStr}
               className={`aspect-square rounded-lg flex items-center justify-center text-xs font-semibold relative ${
-                isToday ? "border-2 border-signal" : "border border-transparent"
-              } ${record ? "bg-panel2 text-ink" : "text-muted"}`}
+                isToday ? "border-2 border-signal shadow-[0_0_10px_rgba(0,95,183,0.2)]" : "border"
+              } ${
+                record?.status === "PRESENT" ? "bg-mint/10 text-mint border-mint/30" :
+                record?.status === "LATE" ? "bg-amber/10 text-amber border-amber/30" :
+                record?.status === "ABSENT" ? "bg-rose/10 text-rose border-rose/30" :
+                record?.status === "HALF_DAY" ? "bg-signal/10 text-signal border-signal/30" :
+                "bg-transparent border-transparent text-muted"
+              }`}
               title={record ? record.status : undefined}
             >
               {day}
-              {record && (
-                <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${STATUS_DOT[record.status] || "bg-muted"}`}></span>
-              )}
             </div>
           );
         })}
@@ -117,19 +210,22 @@ function MiniCalendar({ year, month, recordsByDate, onPrev, onNext }) {
 
 function StatTile({ icon, label, value, hint }) {
   return (
-    <Card className="p-4 flex items-center gap-3">
-      <span className="w-10 h-10 rounded-lg bg-signal/10 text-signal flex items-center justify-center text-sm shrink-0">
-        <i className={icon}></i>
-      </span>
-      <div className="min-w-0">
-        <p className="text-lg font-black text-ink leading-none truncate">{value}</p>
-        <p className="text-[11px] text-muted mt-1 truncate">{label}</p>
-        {hint && <p className="text-[10px] text-muted/70 truncate">{hint}</p>}
+    <div className="attendance-flip-card">
+      <div className="attendance-flip-inner">
+        <div className="attendance-flip-face attendance-flip-front">
+          <span className="attendance-tile-icon">
+            <i className={icon}></i>
+          </span>
+          <p className="attendance-tile-label">{label}</p>
+        </div>
+        <div className="attendance-flip-face attendance-flip-back">
+          <div className="attendance-tile-value">{value}</div>
+          {hint && <p className="attendance-tile-hint">{hint}</p>}
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
-
 function MonthYearPicker({ year, month, onChange }) {
   const currentYear = new Date().getFullYear();
   const years = [currentYear, currentYear - 1];
@@ -166,6 +262,7 @@ function MyAttendancePanel({ user }) {
   const [loading, setLoading] = useState(true);
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth() + 1);
+  const [reportFilter, setReportFilter] = useState("last10");
 
   async function load() {
     setLoading(true);
@@ -189,6 +286,7 @@ function MyAttendancePanel({ user }) {
     () => rows.filter((r) => r.date?.startsWith(monthPrefix)).sort((a, b) => (a.date < b.date ? 1 : -1)),
     [rows, monthPrefix]
   );
+
   const recordsByDate = useMemo(() => {
     const map = {};
     monthRows.forEach((r) => { map[r.date] = r; });
@@ -200,22 +298,52 @@ function MyAttendancePanel({ user }) {
   const isCheckedIn = Boolean(todayRow);
   const isCheckedOut = Boolean(todayRow?.check_out);
 
-  const presentCount = monthRows.filter((r) => r.status === "PRESENT" || r.status === "LATE" || r.status === "HALF_DAY").length;
+  const presentCount = monthRows.filter((r) => ["PRESENT", "LATE", "HALF_DAY"].includes(r.status)).length;
   const absentCount = monthRows.filter((r) => r.status === "ABSENT").length;
   const recordedCount = monthRows.length;
   const monthlyRate = recordedCount > 0 ? Math.round((presentCount / recordedCount) * 100) : 0;
+
   const withHours = monthRows.filter((r) => r.check_in && r.check_out);
   const avgMinutes = withHours.length
-    ? Math.round(withHours.reduce((sum, r) => sum + (new Date(r.check_out) - new Date(r.check_in)) / 60000, 0) / withHours.length)
+    ? Math.round(
+        withHours.reduce(
+          (sum, r) => sum + (new Date(r.check_out) - new Date(r.check_in)) / 60000,
+          0
+        ) / withHours.length
+      )
     : 0;
-  const avgHoursLabel = withHours.length ? `${Math.floor(avgMinutes / 60)}h ${pad2(avgMinutes % 60)}m` : "—";
+  const avgHoursLabel = withHours.length
+    ? `${Math.floor(avgMinutes / 60)}h ${pad2(avgMinutes % 60)}m`
+    : "—";
+
+  const dailyRows = useMemo(() => {
+    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
+    const out = [];
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const dateStr = isoDate(viewYear, viewMonth, day);
+      const date = new Date(viewYear, viewMonth - 1, day);
+      out.push({
+        dateStr,
+        day,
+        dayLabel: date.toLocaleDateString("en-US", { weekday: "short" }),
+        record: recordsByDate[dateStr] || null,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6,
+      });
+    }
+    return out.reverse();
+  }, [viewYear, viewMonth, recordsByDate]);
+
+  const reportRows = reportFilter === "last10" ? dailyRows.slice(0, 10) : dailyRows;
+
+  const statusLabel = isCheckedOut ? "Checked Out" : isCheckedIn ? "Checked In" : "Not Checked In";
+  const statusClass = isCheckedIn ? "attendance-status-success" : "attendance-status-neutral";
 
   async function checkIn() {
     setBusy(true);
     setError("");
     try {
       await api.post("/api/attendance/attendance/check_in/");
-      load();
+      await load();
     } catch (err) {
       setError(err.response?.data?.detail || "Couldn't check in.");
     } finally {
@@ -228,7 +356,7 @@ function MyAttendancePanel({ user }) {
     setError("");
     try {
       await api.post("/api/attendance/attendance/check_out/");
-      load();
+      await load();
     } catch (err) {
       setError(err.response?.data?.detail || "Couldn't check out — did you check in today?");
     } finally {
@@ -243,6 +371,7 @@ function MyAttendancePanel({ user }) {
     if (m > 12) { m = 1; y += 1; }
     setViewMonth(m);
     setViewYear(y);
+    setReportFilter("last10");
   }
 
   async function downloadCsv() {
@@ -265,32 +394,37 @@ function MyAttendancePanel({ user }) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="attendance-page">
+      <div className="attendance-welcome">
         <div>
-          <h2 className="font-display text-xl font-extrabold text-ink">Your attendance overview</h2>
-          <p className="text-sm text-muted mt-0.5">{monthLabel(viewYear, viewMonth)}</p>
+          <h2>Good Morning, {user?.first_name || user?.username || "there"}</h2>
+          <p>Here is your attendance overview for {monthLabel(viewYear, viewMonth)}.</p>
         </div>
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border ${
-              isCheckedIn ? "bg-mint/10 border-mint/30 text-mint" : "bg-panel2 border-line text-muted"
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${isCheckedIn ? "bg-mint" : "bg-muted"}`}></span>
-            {isCheckedOut ? "Checked Out" : isCheckedIn ? "Checked In" : "Not Checked In"}
+        <div className="attendance-current-status">
+          <p>Current Status</p>
+          <span className={`attendance-status-pill ${statusClass}`}>
+            <span className="attendance-status-dot"></span>
+            {statusLabel}
           </span>
-          <Button variant="ghost" onClick={checkIn} disabled={busy || isCheckedIn}>
-            <i className="fa-solid fa-right-to-bracket"></i> Check in
-          </Button>
-          <Button onClick={checkOut} disabled={busy || !isCheckedIn || isCheckedOut}>
-            <i className="fa-solid fa-right-from-bracket"></i> Check out
-          </Button>
-          <Button variant="ghost" onClick={downloadCsv}>
-            <i className="fa-solid fa-file-arrow-down"></i> Download CSV
-          </Button>
         </div>
-      </Card>
+      </div>
+
+      <div className="attendance-actions">
+        <MonthYearPicker
+          year={viewYear}
+          month={viewMonth}
+          onChange={(y, m) => { setViewYear(y); setViewMonth(m); }}
+        />
+        <Button variant="ghost" onClick={checkIn} disabled={busy || isCheckedIn}>
+          <i className="fa-solid fa-right-to-bracket"></i> Check in
+        </Button>
+        <Button onClick={checkOut} disabled={busy || !isCheckedIn || isCheckedOut}>
+          <i className="fa-solid fa-right-from-bracket"></i> Check out
+        </Button>
+        <Button variant="ghost" onClick={downloadCsv}>
+          <i className="fa-solid fa-file-arrow-down"></i> Download CSV
+        </Button>
+      </div>
 
       <ErrorBanner message={error} />
 
@@ -298,50 +432,101 @@ function MyAttendancePanel({ user }) {
         <Loading />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatTile icon="fa-solid fa-percent" label="Monthly rate" value={`${monthlyRate}%`} />
-            <StatTile icon="fa-solid fa-calendar-check" label="Total present" value={presentCount} />
-            <StatTile icon="fa-solid fa-calendar-xmark" label="Total absent" value={absentCount} />
-            <StatTile icon="fa-solid fa-clock" label="Avg. work hours" value={avgHoursLabel} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 attendance-metrics">
+            <StatTile icon="fa-solid fa-percent" label="Monthly Rate" value={`${monthlyRate}%`} />
+            <StatTile icon="fa-solid fa-calendar-check" label="Total Present" value={presentCount} hint="Days" />
+            <StatTile icon="fa-solid fa-calendar-xmark" label="Total Leaves" value={absentCount} hint="Days" />
+            <StatTile icon="fa-solid fa-clock" label="Avg Work Hours" value={avgHoursLabel} hint="Hrs/Day" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <MiniCalendar year={viewYear} month={viewMonth} recordsByDate={recordsByDate} onPrev={() => shiftMonth(-1)} onNext={() => shiftMonth(1)} />
+          <div className="grid grid-cols-1 xl:grid-cols-[332px_minmax(0,1fr)] gap-6 attendance-lower">
+            <MiniCalendar
+              year={viewYear}
+              month={viewMonth}
+              recordsByDate={recordsByDate}
+              onPrev={() => shiftMonth(-1)}
+              onNext={() => shiftMonth(1)}
+            />
 
-            <Card className="p-5">
-              <h3 className="font-display text-base font-bold text-ink mb-3">Monthly Attendance Report</h3>
-              {monthRows.length === 0 ? (
-                <EmptyState icon="fa-solid fa-calendar" title="No records this month" hint="Check in to start logging attendance." />
-              ) : (
-                <div className="overflow-x-auto -mx-1">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-line text-left text-[11px] uppercase tracking-wide text-muted">
-                        <th className="px-1 py-2 font-medium">Date</th>
-                        <th className="px-1 py-2 font-medium">Status</th>
-                        <th className="px-1 py-2 font-medium">In</th>
-                        <th className="px-1 py-2 font-medium">Out</th>
-                        <th className="px-1 py-2 font-medium">Hours</th>
-                        <th className="px-1 py-2 font-medium">Location</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthRows.map((r) => (
-                        <tr key={r.id} className="border-b border-line last:border-0">
-                          <td className="px-1 py-2 text-ink font-medium whitespace-nowrap">
-                            {new Date(r.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </td>
-                          <td className="px-1 py-2"><StatusPill status={r.status} /></td>
-                          <td className="px-1 py-2 text-muted font-mono whitespace-nowrap">{formatTime(r.check_in)}</td>
-                          <td className="px-1 py-2 text-muted font-mono whitespace-nowrap">{formatTime(r.check_out)}</td>
-                          <td className="px-1 py-2 text-muted font-mono whitespace-nowrap">{r.hours_worked || "—"}</td>
-                          <td className="px-1 py-2 text-muted whitespace-nowrap">{r.location_display || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <Card className="p-5 attendance-report-card">
+              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                <h3 className="font-display text-lg font-bold text-ink">Monthly Attendance Report</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setReportFilter("last10")}
+                    className={`attendance-filter ${reportFilter === "last10" ? "active" : ""}`}
+                  >
+                    Last 10 Days
+                  </button>
+                  <button
+                    onClick={() => setReportFilter("full")}
+                    className={`attendance-filter ${reportFilter === "full" ? "active" : ""}`}
+                  >
+                    Full Month
+                  </button>
                 </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse attendance-table">
+                  <thead>
+                    <tr className="border-b border-line text-muted text-xs">
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Check-In</th>
+                      <th>Check-Out</th>
+                      <th>Hours</th>
+                      <th>Location</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportRows.map((d) => {
+                      const r = d.record;
+                      let status = r?.status;
+                      if (!status && d.isWeekend) status = "WEEKLY_OFF";
+                      return (
+                        <tr key={d.dateStr} className="border-b border-line last:border-0">
+                          <td className="font-medium text-ink whitespace-nowrap">
+                            {new Date(`${d.dateStr}T00:00:00`).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              weekday: "short",
+                            })}
+                          </td>
+                          <td className="whitespace-nowrap">
+                            {status === "WEEKLY_OFF" ? (
+                              <span className="text-xs text-muted">Weekly Off</span>
+                            ) : r ? (
+                              <StatusPill status={r.status} />
+                            ) : (
+                              <span className="text-xs text-muted">No record</span>
+                            )}
+                          </td>
+                          <td className="text-muted whitespace-nowrap">{formatTime(r?.check_in)}</td>
+                          <td className="text-muted whitespace-nowrap">{formatTime(r?.check_out)}</td>
+                          <td className={`whitespace-nowrap ${r?.hours_worked ? "text-signal font-semibold" : "text-muted"}`}>
+                            {r?.hours_worked || (r?.status === "ABSENT" ? "Leave" : "—")}
+                          </td>
+                          <td className="text-muted whitespace-nowrap">{r?.location_display || "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {reportRows.length === 0 && (
+                <EmptyState icon="fa-solid fa-calendar" title="No attendance data" hint="Check in to start logging attendance." />
               )}
+
+              <div className="flex justify-center mt-4 pt-3 border-t border-line">
+                <button
+                  onClick={() => setReportFilter("full")}
+                  className="font-semibold text-xs text-signal hover:underline"
+                >
+                  View Full History
+                </button>
+              </div>
             </Card>
           </div>
         </>
@@ -842,6 +1027,7 @@ export default function Attendance() {
 
   return (
     <div>
+      <style>{ATTENDANCE_STYLES}</style>
       <PageHeader eyebrow="Presence" title="Attendance" icon="fa-solid fa-user-clock" />
       {!canManage ? (
         <MyAttendancePanel user={user} />
