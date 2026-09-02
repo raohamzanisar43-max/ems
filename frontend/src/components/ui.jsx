@@ -13,7 +13,7 @@ export function PageHeader({ eyebrow, title, icon, action }) {
               {eyebrow}
             </p>
           )}
-          <h2 className="font-outfit text-2xl font-extrabold tracking-tight" style={{ color: "#0EA5C7" }}>{title}</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink">{title}</h2>
         </div>
       </div>
       {action}
@@ -23,7 +23,7 @@ export function PageHeader({ eyebrow, title, icon, action }) {
 
 export function Card({ children, className = "" }) {
   return (
-    <div className={`glass-card bg-panel border border-line rounded-xl ${className}`}>
+    <div className={`bg-panel border border-line rounded-xl shadow-panel ${className}`}>
       {children}
     </div>
   );
@@ -147,9 +147,9 @@ export function SuccessBanner({ message }) {
 
 export function Button({ children, variant = "primary", className = "", ...props }) {
   const base =
-    "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 active:scale-[0.97]";
+    "inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
   const variants = {
-    primary: "bg-signal hover:bg-signal/90 text-ink shadow-sm hover:shadow-md hover:shadow-signal/20",
+    primary: "bg-signal hover:bg-primary text-white shadow-sm hover:shadow-md hover:shadow-signal/20",
     ghost: "bg-panel2 hover:bg-line text-ink border border-line",
     danger: "bg-rose/10 hover:bg-rose/20 text-rose border border-rose/30",
   };

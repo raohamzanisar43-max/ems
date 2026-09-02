@@ -73,7 +73,7 @@ const STAT_COLOR_CLASSES = {
 function StatMini({ label, value, color, icon }) {
   const c = STAT_COLOR_CLASSES[color];
   return (
-    <div className={`glass-card rounded-2xl p-4 flex items-center gap-3.5 border ${c.border}`}>
+    <div className={`bg-panel shadow-panel rounded-2xl p-4 flex items-center gap-3.5 border ${c.border}`}>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black shrink-0 ${c.box}`}>
         {icon}
       </div>

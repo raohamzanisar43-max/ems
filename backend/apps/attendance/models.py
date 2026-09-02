@@ -8,6 +8,10 @@ class Attendance(models.Model):
         LATE = "LATE", "Late"
         HALF_DAY = "HALF_DAY", "Half Day"
 
+    class Location(models.TextChoices):
+        OFFICE = "OFFICE", "Office (HQ)"
+        REMOTE = "REMOTE", "Remote"
+
     employee_id = models.IntegerField()
     employee_username = models.CharField(max_length=150)
     department_id = models.IntegerField(null=True, blank=True)
@@ -16,6 +20,10 @@ class Attendance(models.Model):
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PRESENT)
+    # Defaults to OFFICE since check-in already requires office Wi-Fi (see
+    # verify_office_wifi) when that restriction is on — this field just makes
+    # that fact visible in the table/CSV rather than changing check-in behavior.
+    location = models.CharField(max_length=20, choices=Location.choices, default=Location.OFFICE)
 
     class Meta:
         unique_together = ["employee_id", "date"]

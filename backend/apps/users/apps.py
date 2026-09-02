@@ -21,7 +21,7 @@ class UsersConfig(AppConfig):
             tables = connection.introspection.table_names()
             if not tables:
                 return
-            
+
             user_table = next((t for t in tables if t.endswith("users_user") or t.endswith("user_user")), None)
             if not user_table:
                 if not any("user" in t for t in tables):
@@ -37,23 +37,24 @@ class UsersConfig(AppConfig):
                 user = User.objects.create_superuser(
                     username=new_username,
                     email=new_email,
-                    password=new_password
+                    password=new_password,
                 )
                 print(f"[AUTO-SETUP] Superuser '{new_username}' created.")
             else:
-                user.set_password(new_password)
-                user.email = new_email
-                print(f"[AUTO-SETUP] Superuser '{new_username}' password updated.")
+                # Preserve any manually-created admin account. Only ensure the role
+                # is correct for the seeded admin, without overwriting a custom password.
+                user.email = user.email or new_email
+                print(f"[AUTO-SETUP] Existing superuser '{new_username}' kept as-is.")
 
             user.role = "ADMIN"
             user.is_staff = True
             user.is_superuser = True
             user.save()
 
-            # Delete old default admin
+            # Delete old default admin only if it was not the same user.
             old_username = "admin"
             if old_username != new_username:
-                User.objects.filter(username=old_username).delete()
+                User.objects.filter(username=old_username).exclude(id=user.id).delete()
 
         except Exception as e:
             print(f"[AUTO-SETUP] Error setting up superuser: {e}")

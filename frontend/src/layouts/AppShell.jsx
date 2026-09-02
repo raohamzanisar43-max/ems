@@ -1,9 +1,21 @@
-import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+
 import { useAuth } from "../context/useAuth";
 import api from "../api/client";
 import { ShellToastContext } from "./ShellToastContext";
 import "./AppShell.css";
+
 
 const ROLE_LABELS = {
   ADMIN: "Admin",
@@ -15,14 +27,48 @@ const ROLE_LABELS = {
   EMPLOYEE: "Employee",
 };
 
+
 const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", icon: "fa-solid fa-chart-pie", end: true, hover: "group-hover:rotate-12" },
-  { to: "/tasks", label: "Tasks", icon: "fa-solid fa-list-check", badgeKey: "tasks", hover: "group-hover:-translate-y-0.5" },
-  { to: "/attendance", label: "Attendance", icon: "fa-solid fa-user-clock", hover: "group-hover:rotate-45" },
-  { to: "/leaves", label: "Leaves", icon: "fa-solid fa-calendar-minus", hover: "group-hover:-rotate-12" },
-  { to: "/reports", label: "Daily Reports", icon: "fa-solid fa-file-invoice", hover: "group-hover:translate-x-0.5" },
-  { to: "/chat", label: "Chat", icon: "fa-solid fa-comments", badgeKey: "live", hover: "" },
+  {
+    to: "/",
+    label: "Dashboard",
+    icon: "fa-solid fa-table-cells-large",
+    end: true,
+  },
+
+  {
+    to: "/tasks",
+    label: "Tasks",
+    icon: "fa-solid fa-list-check",
+    badgeKey: "tasks",
+  },
+
+  {
+    to: "/attendance",
+    label: "Attendance",
+    icon: "fa-solid fa-calendar-check",
+  },
+
+  {
+    to: "/leaves",
+    label: "Leaves",
+    icon: "fa-solid fa-calendar-minus",
+  },
+
+  {
+    to: "/reports",
+    label: "Daily Reports",
+    icon: "fa-solid fa-file-invoice",
+  },
+
+  {
+    to: "/chat",
+    label: "Chat",
+    icon: "fa-solid fa-comments",
+    badgeKey: "live",
+  },
 ];
+
 
 const PAGE_TITLES = {
   "/": "Dashboard",
@@ -38,322 +84,479 @@ const PAGE_TITLES = {
   "/settings": "Settings",
 };
 
+
+function NavItem({
+  to,
+  label,
+  icon,
+  end,
+  badge,
+  onClick,
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `nav-pill flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium transition ${
+          isActive
+            ? "nav-pill-active"
+            : "text-slate-300 hover:text-white"
+        }`
+      }
+    >
+      <i
+        className={`${icon} text-sm w-5 text-center`}
+      ></i>
+
+      <span>{label}</span>
+
+      {badge}
+    </NavLink>
+  );
+}
+
+
 export default function AppShell() {
-  const { user, logout, canSeeAllDepartments, isFinance, isHR, isAdmin, isCEO, isCTO, isTeamLead } = useAuth();
+  const {
+    user,
+    logout,
+    canSeeAllDepartments,
+    isFinance,
+    isHR,
+    isAdmin,
+    isCEO,
+    isCTO,
+    isTeamLead,
+  } = useAuth();
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Light theme was removed from the post-login app shell — always dark.
-  const isDarkMode = true;
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [toast, setToast] = useState({ visible: false, message: "", type: "info" });
-  const [pendingTasksCount, setPendingTasksCount] = useState(0);
-  const toastTimerRef = useRef(null);
+  const [
+    mobileOpen,
+    setMobileOpen,
+  ] = useState(false);
+
+  const [
+    toast,
+    setToast,
+  ] = useState({
+    visible: false,
+    message: "",
+    type: "info",
+  });
+
+  const [
+    pendingTasksCount,
+    setPendingTasksCount,
+  ] = useState(0);
+
+  const toastTimerRef =
+    useRef(null);
+
+  const contentScrollRef =
+    useRef(null);
+
 
   useEffect(() => {
     let cancelled = false;
+
     api
       .get("/api/tasks/tasks/")
       .then(({ data }) => {
         if (cancelled) return;
-        const tasks = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : []);
-        setPendingTasksCount(tasks.filter((t) => t && t.status === "PENDING").length);
+
+        const tasks =
+          Array.isArray(data?.results)
+            ? data.results
+            : Array.isArray(data)
+              ? data
+              : [];
+
+        setPendingTasksCount(
+          tasks.filter(
+            (task) =>
+              task &&
+              task.status === "PENDING"
+          ).length
+        );
       })
       .catch(() => {});
+
     return () => {
       cancelled = true;
     };
   }, [location.pathname]);
 
-  const cursorDotRef = useRef(null);
-  const cursorRingRef = useRef(null);
-  const contentScrollRef = useRef(null);
 
-  function showToast(message, type = "info") {
-    setToast({ visible: true, message, type });
-    clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 3000);
+  function showToast(
+    message,
+    type = "info"
+  ) {
+    setToast({
+      visible: true,
+      message,
+      type,
+    });
+
+    clearTimeout(
+      toastTimerRef.current
+    );
+
+    toastTimerRef.current =
+      setTimeout(
+        () =>
+          setToast((value) => ({
+            ...value,
+            visible: false,
+          })),
+        3000
+      );
   }
+
 
   function handleLogout() {
     logout();
     navigate("/login");
   }
 
+
   useEffect(() => {
-    contentScrollRef.current?.scrollTo(0, 0);
+    contentScrollRef.current?.scrollTo(
+      0,
+      0
+    );
   }, [location.pathname]);
 
-  // ---- Trailing-ring cursor: dot glued to the pointer, ring eases in behind it.
-  // (The animated background canvas/particles were removed.)
-  useEffect(() => {
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let targetX = mouseX;
-    let targetY = mouseY;
 
-    function onMouseMove(e) {
-      if (!e || typeof e.clientX !== "number") return;
-      targetX = e.clientX;
-      targetY = e.clientY;
-      if (cursorDotRef.current) {
-        cursorDotRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px) translate(-50%, -50%)`;
+  const displayName =
+    `${user?.first_name || ""} ${user?.last_name || ""}`.trim() ||
+    user?.username ||
+    "User";
+
+
+  const initial =
+    displayName
+      .charAt(0)
+      .toUpperCase();
+
+
+  const dateText =
+    new Date().toLocaleDateString(
+      "en-US",
+      {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       }
-    }
-    window.addEventListener("mousemove", onMouseMove);
+    );
 
-    let frameId;
-    function render() {
-      mouseX += (targetX - mouseX) * 0.08;
-      mouseY += (targetY - mouseY) * 0.08;
-      if (cursorRingRef.current) {
-        cursorRingRef.current.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
-      }
-      frameId = requestAnimationFrame(render);
-    }
-    render();
 
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener("mousemove", onMouseMove);
-    };
-  }, []);
+  const pageTitle =
+    PAGE_TITLES[
+      location.pathname
+    ] || "Dashboard";
 
-  const initial = (user?.username || "?").charAt(0).toUpperCase();
-  const hour = new Date().getHours();
-  const dateText = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const pageTitle = PAGE_TITLES[location.pathname] || "Dashboard";
+
+  const closeMobile = () =>
+    setMobileOpen(false);
+
+
+  const profilePicture =
+    user?.profile_picture_url;
+
 
   return (
-    <ShellToastContext.Provider value={showToast}>
-      <div
-        className={`novu-shell ${isDarkMode ? "dark" : ""} h-screen relative flex overflow-hidden selection:bg-electric-cyan selection:text-navy-900`}
-        style={{
-          background: "#ffffff",
-          color: "#0f172a",
-        }}
-      >
-        <div ref={cursorRingRef} className="custom-cursor-ring" />
-        <div ref={cursorDotRef} className="custom-cursor-dot" />
+    <ShellToastContext.Provider
+      value={showToast}
+    >
+      <div className="novu-shell h-screen relative flex overflow-hidden bg-canvas text-ink">
 
-        {/* Mobile drawer backdrop */}
         {mobileOpen && (
           <div
-            onClick={() => setMobileOpen(false)}
-            className="fixed inset-0 bg-navy-900/80 backdrop-blur-md z-30 lg:hidden"
+            onClick={closeMobile}
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           />
         )}
 
+
         <aside
-          className={`app-sidebar content-light fixed lg:relative top-0 left-0 h-screen w-72 glass-card border-r border-slate-200 z-40 flex flex-col p-5 transition-transform duration-300 shrink-0 ${
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          className={`fixed lg:relative top-0 left-0 h-screen w-[260px] bg-sidebar z-40 flex flex-col p-4 transition-transform duration-300 shrink-0 ${
+            mobileOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
           } lg:translate-x-0`}
         >
-          <div className="shrink-0">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-              <NavLink to="/" className="flex items-center gap-3.5 group">
-                <div className="relative w-10 h-10 flex items-center justify-center anim-icon-float transition-transform duration-300 group-hover:scale-110">
-                  <img
-                    src="/static/novulabs-mark.png"
-                    alt="Novu Labs"
-                    className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(28,115,201,0.25)]"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-outfit font-black text-xl tracking-tight text-slate-900 leading-none">Novu</span>
-                    <span className="font-outfit font-black text-xl tracking-tight text-blue-600 leading-none">Labs</span>
-                  </div>
-                  <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-1">EMS</span>
-                </div>
-              </NavLink>
-              <button onClick={() => setMobileOpen(false)} className="lg:hidden p-2 text-slate-400 hover:text-slate-700 rounded-xl transition" aria-label="Close menu">
-                <i className="fa-solid fa-xmark text-lg"></i>
-              </button>
-            </div>
+
+          <div className="shrink-0 flex items-center justify-between px-2 py-3">
+            <NavLink
+              to="/"
+              className="flex items-center gap-3"
+            >
+              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <img
+                  src="/static/novulabs-mark.png"
+                  alt="NovuLabs"
+                  className="w-6 h-6 object-contain"
+                />
+              </div>
+
+              <div className="flex flex-col leading-tight">
+                <span className="font-display font-extrabold text-lg text-white leading-none">
+                  NovuLabs
+                </span>
+
+                <span className="text-[10px] font-semibold tracking-wide text-slate-400 uppercase mt-1">
+                  Enterprise EMS
+                </span>
+              </div>
+            </NavLink>
+
+            <button
+              onClick={closeMobile}
+              className="lg:hidden p-2 text-slate-400 hover:text-white rounded-lg transition"
+              aria-label="Close menu"
+            >
+              <i className="fa-solid fa-xmark"></i>
+            </button>
           </div>
 
-            <nav className="space-y-1.5 flex-1 min-h-0 overflow-y-auto mt-6 -mx-1 px-1">
-              {NAV_ITEMS.map((item) => (
-                <NavLink
+
+          <nav className="space-y-1 flex-1 min-h-0 overflow-y-auto mt-4">
+            {NAV_ITEMS.map(
+              (item) => (
+                <NavItem
                   key={item.to}
                   to={item.to}
                   end={item.end}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                      isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                    }`
+                  icon={item.icon}
+                  label={item.label}
+                  onClick={closeMobile}
+                  badge={
+                    item.badgeKey ===
+                    "live" ? (
+                      <span className="ml-auto bg-mint/20 text-mint text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        Live
+                      </span>
+                    ) : item.badgeKey ===
+                        "tasks" &&
+                      pendingTasksCount >
+                        0 ? (
+                      <span className="ml-auto bg-amber/20 text-amber text-[10px] px-2 py-0.5 rounded-full font-bold">
+                        {pendingTasksCount}
+                      </span>
+                    ) : null
                   }
-                >
-                  <i className={`${item.icon} text-sm w-5 text-center transition-transform group-hover:scale-125 ${item.hover || ""}`}></i>
-                  <span>{item.label}</span>
-                  {item.badgeKey === "live" && (
-                    <span className="ml-auto bg-emerald-50 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full font-bold">Live</span>
-                  )}
-                  {item.badgeKey === "tasks" && (
-                    <span className="ml-auto bg-amber-50 text-amber-600 text-[10px] px-2 py-0.5 rounded-full font-bold">{pendingTasksCount}</span>
-                  )}
-                </NavLink>
-              ))}
+                />
+              )
+            )}
 
-              {(isFinance || isHR || isAdmin) && (
-                <NavLink
-                  to="/payroll"
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                      isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                    }`
-                  }
-                >
-                  <i className="fa-solid fa-money-check-dollar text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                  <span>Payroll</span>
-                </NavLink>
-              )}
 
-              {(canSeeAllDepartments || isTeamLead) && (
-                <NavLink
-                  to="/employees"
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                      isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                    }`
-                  }
-                >
-                  <i className="fa-solid fa-users text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                  <span>Employees</span>
-                </NavLink>
-              )}
+            {(isFinance ||
+              isHR ||
+              isAdmin) && (
+              <NavItem
+                to="/payroll"
+                icon="fa-solid fa-money-check-dollar"
+                label="Payroll"
+                onClick={closeMobile}
+              />
+            )}
 
-              {(isHR || isAdmin) && (
-                <>
-                  <NavLink
-                    to="/roles"
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                        isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                      }`
-                    }
-                  >
-                    <i className="fa-solid fa-user-tag text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                    <span>Roles</span>
-                  </NavLink>
-                  <NavLink
-                    to="/permissions"
-                    onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) =>
-                      `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                        isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                      }`
-                    }
-                  >
-                    <i className="fa-solid fa-shield-halved text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                    <span>Permissions</span>
-                  </NavLink>
-                </>
-              )}
 
-              {(isHR || isAdmin || isCEO || isCTO) && (
-                <NavLink
-                  to="/settings"
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `nav-pill flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition group ${
-                      isActive ? "nav-pill-active" : "text-slate-600 hover:bg-slate-100 hover:text-blue-600"
-                    }`
-                  }
-                >
-                  <i className="fa-solid fa-gear text-sm w-5 text-center transition-transform group-hover:scale-125"></i>
-                  <span>Settings</span>
-                </NavLink>
-              )}
-            </nav>
+            {(canSeeAllDepartments ||
+              isTeamLead) && (
+              <NavItem
+                to="/employees"
+                icon="fa-solid fa-users"
+                label="Employees"
+                onClick={closeMobile}
+              />
+            )}
 
-          <div className="shrink-0 pt-4 border-t border-slate-200">
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-electric-azure to-electric-cyan text-navy-900 font-extrabold flex items-center justify-center text-sm shadow-md shrink-0">
-                  {initial}
-                </div>
-                <div className="leading-tight min-w-0">
-                  <span className="block text-xs font-extrabold text-slate-900 truncate">{user?.username}</span>
-                  <span className="block text-[10px] font-bold text-slate-500">{ROLE_LABELS[user?.role] || user?.role}</span>
-                </div>
-              </div>
-              <button onClick={handleLogout} className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition shrink-0" title="Logout">
-                <i className="fa-solid fa-right-from-bracket text-xs"></i>
-              </button>
-            </div>
+
+            {(isHR ||
+              isAdmin) && (
+              <>
+                <NavItem
+                  to="/roles"
+                  icon="fa-solid fa-user-tag"
+                  label="Roles"
+                  onClick={closeMobile}
+                />
+
+                <NavItem
+                  to="/permissions"
+                  icon="fa-solid fa-shield-halved"
+                  label="Permissions"
+                  onClick={closeMobile}
+                />
+              </>
+            )}
+          </nav>
+
+
+          <div className="shrink-0 pt-3 border-t border-white/10 space-y-1">
+
+            {/* Settings is a personal feature, therefore every authenticated
+                employee can access it. Administrative sections inside Settings
+                remain permission protected. */}
+            <NavItem
+              to="/settings"
+              icon="fa-solid fa-gear"
+              label="Settings"
+              onClick={closeMobile}
+            />
+
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3.5 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:text-white hover:bg-white/5 transition"
+            >
+              <i className="fa-solid fa-right-from-bracket text-sm w-5 text-center"></i>
+
+              <span>Logout</span>
+            </button>
           </div>
         </aside>
 
-        <div ref={contentScrollRef} className="content-light flex-1 min-w-0 flex flex-col relative z-10 h-screen overflow-y-auto">
-          <header className="bg-white/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-200 px-4 sm:px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setMobileOpen(true)}
-                className="lg:hidden p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition"
-                aria-label="Open menu"
-              >
-                <i className="fa-solid fa-bars text-sm"></i>
-              </button>
-              <div>
-                <h1 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                  <span>{pageTitle}</span>
-                </h1>
-                <p className="text-[11px] text-slate-500 hidden sm:block">{dateText}</p>
-              </div>
+
+        <div
+          ref={contentScrollRef}
+          className="flex-1 min-w-0 flex flex-col relative z-10 h-screen overflow-y-auto"
+        >
+
+          <header className="bg-panel/95 backdrop-blur-sm sticky top-0 z-20 border-b border-line px-4 sm:px-6 py-3 flex items-center gap-4">
+
+            <button
+              onClick={() =>
+                setMobileOpen(true)
+              }
+              className="lg:hidden p-2.5 rounded-xl bg-panel2 border border-line text-ink hover:bg-line transition shrink-0"
+              aria-label="Open menu"
+            >
+              <i className="fa-solid fa-bars text-sm"></i>
+            </button>
+
+
+            <div className="hidden sm:block relative flex-1 max-w-md">
+              <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-xs"></i>
+
+              <input
+                placeholder={`Search ${pageTitle.toLowerCase()}…`}
+                className="w-full bg-panel2 border border-line rounded-lg pl-9 pr-3 py-2 text-sm text-ink placeholder:text-muted outline-none focus:border-signal transition"
+              />
             </div>
 
-            <div className="flex items-center gap-3.5">
+
+            <h1 className="sm:hidden text-base font-bold text-ink flex-1 truncate">
+              {pageTitle}
+            </h1>
+
+
+            <div className="flex items-center gap-3 ml-auto shrink-0">
+
+              <span className="hidden md:inline text-xs font-semibold text-muted uppercase tracking-wide">
+                {dateText}
+              </span>
+
+
               <button
-                onClick={() => showToast("No new notifications", "info")}
-                className="anim-icon-wiggle p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition relative group"
+                onClick={() =>
+                  showToast(
+                    "No new notifications",
+                    "info"
+                  )
+                }
+                className="w-9 h-9 rounded-xl bg-panel2 border border-line text-ink hover:bg-line transition relative flex items-center justify-center"
+                aria-label="Notifications"
               >
                 <i className="fa-regular fa-bell text-sm"></i>
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-blue-500 rounded-full animate-ping"></span>
+
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-signal rounded-full"></span>
               </button>
+
+
+              <button
+                onClick={() =>
+                  showToast(
+                    "EMS v2.4 — need help? Contact HR/Admin.",
+                    "info"
+                  )
+                }
+                className="hidden sm:flex w-9 h-9 rounded-xl bg-panel2 border border-line text-ink hover:bg-line transition items-center justify-center"
+                aria-label="Help"
+              >
+                <i className="fa-regular fa-circle-question text-sm"></i>
+              </button>
+
+
+              <div className="flex items-center gap-2.5 pl-1">
+
+                {profilePicture ? (
+                  <img
+                    src={profilePicture}
+                    alt={displayName}
+                    className="w-9 h-9 rounded-full object-cover border border-line shrink-0"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-signal text-white font-bold flex items-center justify-center text-sm shrink-0">
+                    {initial}
+                  </div>
+                )}
+
+
+                <div className="hidden md:flex flex-col leading-tight">
+                  <span className="text-xs font-bold text-ink">
+                    {displayName}
+                  </span>
+
+                  <span className="text-[10px] font-semibold text-signal">
+                    {ROLE_LABELS[user?.role] ||
+                      user?.role}
+                  </span>
+                </div>
+              </div>
             </div>
           </header>
 
-          <main className="bg-white flex-1 p-4 sm:p-8 space-y-8 max-w-7xl w-full mx-auto">
+
+          <main className="flex-1 p-4 sm:p-8 space-y-8 max-w-7xl w-full mx-auto">
             <Outlet />
           </main>
 
-          <footer className="bg-white mt-auto border-t border-slate-200 px-4 sm:px-8 py-5 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <span>© 2026 NovuLabs Software Solutions. All rights reserved.</span>
-            <div className="flex items-center gap-4">
-              <span className="text-blue-600 font-bold">EMS v2.4</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-              <span>Enterprise Core</span>
-            </div>
+
+          <footer className="mt-auto border-t border-line px-4 sm:px-8 py-5 text-xs text-muted flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span>
+              © 2026 NovuLabs Software Solutions. All rights reserved.
+            </span>
+
+            <span className="text-signal font-bold">
+              EMS v2.4
+            </span>
           </footer>
         </div>
 
+
         <div
-          className={`fixed bottom-6 right-6 z-50 bg-white shadow-xl border border-slate-200 px-5 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-3 max-w-sm ${
-            toast.visible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
+          className={`fixed bottom-6 right-6 z-50 bg-panel shadow-xl border border-line px-5 py-3.5 rounded-2xl transition-all duration-300 flex items-center gap-3 max-w-sm ${
+            toast.visible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-20 opacity-0 pointer-events-none"
           }`}
         >
-          <i
-            className={`fa-solid text-sm shrink-0 ${
-              toast.type === "success"
-                ? "fa-circle-check text-emerald-500"
-                : toast.type === "error"
-                ? "fa-circle-xmark text-rose-500"
-                : "fa-circle-info text-blue-600"
-            }`}
-          ></i>
-          <span className="text-xs font-extrabold text-slate-900 whitespace-nowrap">{toast.message}</span>
+          <div className="w-8 h-8 rounded-full bg-signal/10 text-signal flex items-center justify-center shrink-0">
+            <i className="fa-solid fa-circle-info text-sm"></i>
+          </div>
+
+          <span className="text-sm text-ink">
+            {toast.message}
+          </span>
         </div>
+
       </div>
     </ShellToastContext.Provider>
   );
