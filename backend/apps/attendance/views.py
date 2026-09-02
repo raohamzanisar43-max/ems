@@ -146,6 +146,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         )
 
         if not created:
+            # The dashboard toggle is reversible: if the employee checked out
+            # earlier today and switches the toggle back ON, reopen the same
+            # attendance record instead of creating a second row (the model
+            # intentionally has one row per employee/date). Preserve the
+            # original check-in timestamp and simply clear check_out.
+            if obj.check_out is not None:
+                obj.check_out = None
+                obj.save(update_fields=["check_out"])
+                return Response(AttendanceSerializer(obj).data)
+
             return Response(
                 {
                     "detail": "You have already checked in today.",
