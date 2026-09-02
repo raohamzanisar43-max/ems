@@ -153,12 +153,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 STORAGES = {
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-
-# Prevent WhiteNoise from crashing collectstatic when 3rd party packages (like Jazzmin) missing .map sourcemaps
-WHITENOISE_MANIFEST_STRICT = False
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
