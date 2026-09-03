@@ -28,9 +28,14 @@ function serveStaticAssetsFromPublic() {
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [serveStaticAssetsFromPublic(), react()],
-  base: "/",
+  // Production serves the built app through Django/whitenoise under
+  // STATIC_URL ("/static/"), so bundled asset references need that prefix
+  // baked in — otherwise the browser requests bare "/assets/..." which
+  // Django's SPA catch-all answers with index.html instead of the real file.
+  // Dev stays at "/" since the Vite dev server serves everything from root.
+  base: command === "build" ? "/static/" : "/",
   server: {
     port: 5173,
     proxy: {
@@ -53,4 +58,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
