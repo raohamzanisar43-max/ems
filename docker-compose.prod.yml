@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ems_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - ems_db_data:/var/lib/postgresql/data
+      - ems_db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ems_user -d ems"]
       interval: 5s
