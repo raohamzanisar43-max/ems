@@ -53,8 +53,8 @@ function RoleBadge({ role }) {
 
 export default function Employees() {
   const { isAdmin, isHR, canSeeAllDepartments, user } = useAuth();
-  // Only HR/Admin can create employee accounts.
   const canCreateEmployees = isAdmin || isHR;
+  const canConfigureOfficeTiming = isAdmin || isHR;
   const ROLES = ALL_ROLES;
   const {
     items: employees, page, count, hasNext, hasPrevious, loading, error, setError, goToPage,
@@ -79,6 +79,11 @@ export default function Employees() {
     reporting_manager: "",
     employee_type: "FULL_TIME",
     custom_role: "",
+    office_start_time: "",
+    office_end_time: "",
+    is_dual_shift: false,
+    second_shift_start_time: "",
+    second_shift_end_time: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [customRoles, setCustomRoles] = useState([]);
@@ -125,7 +130,27 @@ export default function Employees() {
     setShowForm(true);
   }
 
-  function openEditForm(emp) {
+  async function openEditForm(emp) {
+    let officeStart = "";
+    let officeEnd = "";
+    let isDualShift = false;
+    let secondShiftStart = "";
+    let secondShiftEnd = "";
+
+    try {
+      const { data } = await api.get("/api/employees/profiles/");
+      const profile = (data.results || data).find((item) => item.user_id === emp.id);
+      if (profile) {
+        officeStart = profile.office_start_time || "";
+        officeEnd = profile.office_end_time || "";
+        isDualShift = Boolean(profile.is_dual_shift);
+        secondShiftStart = profile.second_shift_start_time || "";
+        secondShiftEnd = profile.second_shift_end_time || "";
+      }
+    } catch {
+      // Non-admin viewers won't be able to fetch this view; keep the form open with blank values.
+    }
+
     setForm({
       username: emp.username || "",
       email: emp.email || "",
@@ -142,6 +167,11 @@ export default function Employees() {
       reporting_manager: emp.reporting_manager || "",
       employee_type: emp.employee_type || "FULL_TIME",
       custom_role: emp.custom_role || "",
+      office_start_time: officeStart,
+      office_end_time: officeEnd,
+      is_dual_shift: isDualShift,
+      second_shift_start_time: secondShiftStart,
+      second_shift_end_time: secondShiftEnd,
     });
     setEditingId(emp.id);
     setSuccess("");
@@ -159,6 +189,21 @@ export default function Employees() {
     e.preventDefault();
     setSuccess("");
     setError("");
+
+    const officeTimingPayload = canConfigureOfficeTiming
+      ? {
+          office_start_time: form.office_start_time || null,
+          office_end_time: form.office_end_time || null,
+          is_dual_shift: Boolean(form.is_dual_shift),
+          second_shift_start_time: form.is_dual_shift
+            ? (form.second_shift_start_time || null)
+            : null,
+          second_shift_end_time: form.is_dual_shift
+            ? (form.second_shift_end_time || null)
+            : null,
+        }
+      : {};
+
     const payload = {
       ...form,
       phone: form.phone ? `${PHONE_COUNTRY_CODE}${form.phone}` : "",
@@ -167,18 +212,43 @@ export default function Employees() {
       custom_role: form.custom_role ? Number(form.custom_role) : null,
       date_of_birth: form.date_of_birth || null,
     };
+
     try {
+      let savedUserId = editingId;
+
       if (editingId) {
         delete payload.password;
+        delete payload.office_start_time;
+        delete payload.office_end_time;
+        delete payload.is_dual_shift;
+        delete payload.second_shift_start_time;
+        delete payload.second_shift_end_time;
         await api.patch(`/api/auth/employees/${editingId}/`, payload);
         setSuccess(`${form.username}'s details were updated.`);
       } else {
-        await api.post("/api/auth/employees/", payload);
+        const { data } = await api.post("/api/auth/employees/", payload);
+        savedUserId = data.id;
         setSuccess(
           `Account created for ${form.username} — username/password were emailed to ${form.email}. ` +
           `(No real mailbox is set up yet, so check the auth-service log if the email hasn't actually arrived.)`
         );
       }
+
+      if (canConfigureOfficeTiming && (editingId || form.is_dual_shift || form.office_start_time || form.office_end_time)) {
+        const profilesRes = await api.get("/api/employees/profiles/");
+        const profiles = profilesRes.data.results || profilesRes.data;
+        const existingProfile = profiles.find((item) => item.user_id === savedUserId);
+
+        if (existingProfile) {
+          await api.patch(`/api/employees/profiles/${existingProfile.id}/`, officeTimingPayload);
+        } else {
+          await api.post("/api/employees/profiles/", {
+            user_id: savedUserId,
+            ...officeTimingPayload,
+          });
+        }
+      }
+
       setShowForm(false);
       setForm(emptyForm);
       setEditingId(null);
@@ -328,6 +398,54 @@ export default function Employees() {
                   ))}
                 </select>
               </div>
+            )}
+
+            {canConfigureOfficeTiming && (
+              <>
+                <div>
+                  <label className="block text-xs text-muted mb-1.5">Office start time</label>
+                  <input type="time" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                    value={form.office_start_time} onChange={(e) => setForm({ ...form, office_start_time: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted mb-1.5">Office end time</label>
+                  <input type="time" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                    value={form.office_end_time} onChange={(e) => setForm({ ...form, office_end_time: e.target.value })} />
+                </div>
+                <label className="sm:col-span-2 flex items-center gap-3 rounded-lg border border-line bg-panel2 px-3 py-3 text-sm text-ink cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-signal"
+                    checked={form.is_dual_shift}
+                    onChange={(e) => setForm({
+                      ...form,
+                      is_dual_shift: e.target.checked,
+                      ...(e.target.checked ? {} : {
+                        second_shift_start_time: "",
+                        second_shift_end_time: "",
+                      }),
+                    })}
+                  />
+                  <span>
+                    <span className="block font-medium">Dual-shift employee</span>
+                    <span className="block text-xs text-muted mt-0.5">Configure a second working period for this employee.</span>
+                  </span>
+                </label>
+                {form.is_dual_shift && (
+                  <>
+                    <div>
+                      <label className="block text-xs text-muted mb-1.5">Second shift start time</label>
+                      <input type="time" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                        value={form.second_shift_start_time} onChange={(e) => setForm({ ...form, second_shift_start_time: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted mb-1.5">Second shift end time</label>
+                      <input type="time" className="w-full bg-panel2 border border-line rounded-lg px-3 py-2 text-ink outline-none focus:border-signal"
+                        value={form.second_shift_end_time} onChange={(e) => setForm({ ...form, second_shift_end_time: e.target.value })} />
+                    </div>
+                  </>
+                )}
+              </>
             )}
             <div className="sm:col-span-2">
               <Button type="submit">
