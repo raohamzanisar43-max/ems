@@ -52,6 +52,16 @@ def verify_office_wifi(request):
         )
 
 
+def get_employee_checkin_cutoff_time(user):
+    from apps.employees.models import EmployeeProfile
+
+    profile = EmployeeProfile.objects.filter(user_id=user.id).first()
+    if profile and profile.office_start_time:
+        return profile.office_start_time
+
+    return timezone.datetime.strptime("09:30:00", "%H:%M:%S").time()
+
+
 class AttendanceViewSet(viewsets.ModelViewSet):
     """
     - CEO/HR/CTO: see attendance across all departments.
@@ -131,7 +141,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         user = request.user
         now = timezone.now()
         local_time = timezone.localtime(now)
-        cutoff_time = timezone.datetime.strptime("09:30:00", "%H:%M:%S").time()
+        cutoff_time = get_employee_checkin_cutoff_time(user)
         status_value = Attendance.Status.LATE if local_time.time() > cutoff_time else Attendance.Status.PRESENT
 
         obj, created = Attendance.objects.get_or_create(

@@ -49,6 +49,30 @@ class EmployeeProfile(models.Model):
         blank=True,
     )
 
+    office_start_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
+    office_end_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
+    is_dual_shift = models.BooleanField(
+        default=False,
+    )
+
+    second_shift_start_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
+    second_shift_end_time = models.TimeField(
+        null=True,
+        blank=True,
+    )
+
     grade = models.CharField(
         max_length=50,
         blank=True,
