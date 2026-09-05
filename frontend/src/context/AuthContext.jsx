@@ -156,6 +156,7 @@ export function AuthProvider({ children }) {
         const mergedUser = {
           ...user,
           ...(data.user || {}),
+          ...(data.employee_profile || {}),
           id: user.id,
           role: user.role,
         };

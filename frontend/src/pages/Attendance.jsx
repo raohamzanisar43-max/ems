@@ -66,6 +66,7 @@ const ATTENDANCE_STYLES = `
 .attendance-tile-icon { color: #00478c; font-size: 31px; line-height: 1; margin-bottom: 18px; }
 .attendance-tile-label { margin: 0; color: #414752; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .attendance-tile-value { color: #171c1f; font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -.02em; }
+.attendance-office-timing { max-width: 100%; font-size: 17px; line-height: 1.25; letter-spacing: 0; text-align: center; white-space: pre-line; overflow-wrap: anywhere; }
 .attendance-tile-hint { margin: 7px 0 0; color: #414752; font-size: 14px; }
 .attendance-filter {
   padding: 6px 11px; border-radius: 999px; border: 1px solid #c1c6d4;
@@ -86,6 +87,7 @@ const ATTENDANCE_STYLES = `
   .attendance-flip-card { height: 126px; }
   .attendance-tile-icon { margin-bottom: 12px; }
   .attendance-tile-value { font-size: 28px; }
+  .attendance-office-timing { font-size: 15px; line-height: 1.2; }
 }
 @media (prefers-reduced-motion: reduce) {
   .attendance-flip-inner { transition: none; }
@@ -208,9 +210,40 @@ function MiniCalendar({ year, month, recordsByDate, onPrev, onNext }) {
   );
 }
 
-function StatTile({ icon, label, value, hint }) {
+function formatOfficeTime(value) {
+  if (!value) return "—";
+
+  const raw = typeof value === "string" ? value : value.toString();
+  const [hours, minutes] = raw.split(":").map((part) => Number(part));
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return raw;
+
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function officeTimingSummary(profile) {
+  const start = profile?.office_start_time;
+  const end = profile?.office_end_time;
+  const secondStart = profile?.second_shift_start_time;
+  const secondEnd = profile?.second_shift_end_time;
+
+  if (!start && !end) return "Not set";
+
+  const firstShift = `${formatOfficeTime(start)} to ${formatOfficeTime(end)}`;
+
+  if (profile?.is_dual_shift && (secondStart || secondEnd)) {
+    return `${firstShift}\n${formatOfficeTime(secondStart)} to ${formatOfficeTime(secondEnd)}`;
+  }
+
+  return firstShift;
+}
+
+function StatTile({ icon, label, value, hint, title, valueClassName = "" }) {
   return (
-    <div className="attendance-flip-card">
+    <div className="attendance-flip-card" title={title ?? undefined}>
       <div className="attendance-flip-inner">
         <div className="attendance-flip-face attendance-flip-front">
           <span className="attendance-tile-icon">
@@ -219,7 +252,7 @@ function StatTile({ icon, label, value, hint }) {
           <p className="attendance-tile-label">{label}</p>
         </div>
         <div className="attendance-flip-face attendance-flip-back">
-          <div className="attendance-tile-value">{value}</div>
+          <div className={`attendance-tile-value ${valueClassName}`}>{value}</div>
           {hint && <p className="attendance-tile-hint">{hint}</p>}
         </div>
       </div>
@@ -432,11 +465,19 @@ function MyAttendancePanel({ user }) {
         <Loading />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 attendance-metrics">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 attendance-metrics">
             <StatTile icon="fa-solid fa-percent" label="Monthly Rate" value={`${monthlyRate}%`} />
             <StatTile icon="fa-solid fa-calendar-check" label="Total Present" value={presentCount} hint="Days" />
             <StatTile icon="fa-solid fa-calendar-xmark" label="Total Leaves" value={absentCount} hint="Days" />
             <StatTile icon="fa-solid fa-clock" label="Avg Work Hours" value={avgHoursLabel} hint="Hrs/Day" />
+            <StatTile
+              icon="fa-solid fa-business-time"
+              label="Office Timing"
+              value={officeTimingSummary(user)}
+              valueClassName="attendance-office-timing"
+              hint="Your schedule"
+              title={`Office time: ${officeTimingSummary(user)}`}
+            />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[332px_minmax(0,1fr)] gap-6 attendance-lower">
@@ -668,12 +709,19 @@ function EmployeeAttendanceDetail({ employee, onBack }) {
         <Loading />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <StatTile icon="fa-solid fa-briefcase" label="Total working days" value={workingDaysTotal} />
             <StatTile icon="fa-solid fa-calendar-check" label="Present days" value={presentDays} />
             <StatTile icon="fa-solid fa-mug-hot" label="Half days" value={halfDays} />
             <StatTile icon="fa-solid fa-calendar-xmark" label="Absent days" value={absentDays} />
             <StatTile icon="fa-solid fa-clock" label="Late days" value={lateDays} />
+            <StatTile
+              icon="fa-solid fa-business-time"
+              label="Office Timing"
+              value={officeTimingSummary(employee)}
+              hint="Shift hours"
+              title={`Office time: ${officeTimingSummary(employee)}`}
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">

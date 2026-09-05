@@ -10,6 +10,51 @@ from .models import User
 from apps.employees.models import EmployeeProfile
 
 
+def _build_employee_code_for_user(user):
+    base_code = f"EMP-{user.id}"
+
+    if not EmployeeProfile.objects.filter(employee_code=base_code).exists():
+        return base_code
+
+    suffix = 1
+    while EmployeeProfile.objects.filter(employee_code=f"{base_code}-{suffix}").exists():
+        suffix += 1
+
+    return f"{base_code}-{suffix}"
+
+
+def _ensure_employee_profile_for_user(user):
+    profile = EmployeeProfile.objects.filter(user_id=user.id).first()
+
+    if profile is None:
+        profile = EmployeeProfile.objects.create(
+            user_id=user.id,
+            username=user.username,
+            department_id=user.department_id,
+            employee_code=_build_employee_code_for_user(user),
+        )
+        return profile
+
+    changed = False
+
+    if not profile.employee_code:
+        profile.employee_code = _build_employee_code_for_user(user)
+        changed = True
+
+    if profile.username != user.username:
+        profile.username = user.username
+        changed = True
+
+    if profile.department_id != user.department_id:
+        profile.department_id = user.department_id
+        changed = True
+
+    if changed:
+        profile.save(update_fields=["username", "department_id", "employee_code"])
+
+    return profile
+
+
 class MyProfileSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(
         source="department.name",
@@ -113,6 +158,11 @@ class MyEmployeeProfileSerializer(serializers.ModelSerializer):
             "work_location",
             "grade",
             "cost_center",
+            "office_start_time",
+            "office_end_time",
+            "is_dual_shift",
+            "second_shift_start_time",
+            "second_shift_end_time",
             "emergency_contact_name",
             "emergency_contact_relationship",
             "emergency_contact_phone",
@@ -124,6 +174,11 @@ class MyEmployeeProfileSerializer(serializers.ModelSerializer):
             "employee_code",
             "joining_date",
             "department_name",
+            "office_start_time",
+            "office_end_time",
+            "is_dual_shift",
+            "second_shift_start_time",
+            "second_shift_end_time",
         ]
 
     def get_department_name(self, obj):
@@ -158,20 +213,7 @@ class MyProfileView(APIView):
     def get(self, request):
         user = request.user
 
-        employee_profile = EmployeeProfile.objects.filter(
-            user_id=user.id
-        ).first()
-
-        if not employee_profile:
-            employee_profile = EmployeeProfile.objects.create(
-                user_id=user.id,
-                username=user.username,
-                department_id=(
-                    user.department_id
-                    if user.department_id
-                    else None
-                ),
-            )
+        employee_profile = _ensure_employee_profile_for_user(user)
 
         return Response({
             "user": MyProfileSerializer(
@@ -189,16 +231,7 @@ class MyProfileView(APIView):
     def patch(self, request):
         user = request.user
 
-        employee_profile = EmployeeProfile.objects.filter(
-            user_id=user.id
-        ).first()
-
-        if not employee_profile:
-            employee_profile = EmployeeProfile.objects.create(
-                user_id=user.id,
-                username=user.username,
-                department_id=user.department_id,
-            )
+        employee_profile = _ensure_employee_profile_for_user(user)
 
         user_allowed_fields = [
             "first_name",
@@ -253,6 +286,9 @@ class MyProfileView(APIView):
         )
 
         user_serializer.save()
+
+        if not employee_profile.employee_code:
+            employee_profile.employee_code = _build_employee_code_for_user(user)
 
         employee_serializer.save(
             user_id=user.id,

@@ -47,9 +47,9 @@ class CustomRoleViewSet(viewsets.ModelViewSet):
 
 
 class CompanyProfileView(generics.RetrieveUpdateAPIView):
-    """Singleton company profile shown on the Settings page. HR/Admin/CEO/CTO."""
+    """Singleton company profile shown on the Settings page. HR/Admin only."""
     serializer_class = CompanyProfileSerializer
-    permission_classes = [IsHRorCEO]
+    permission_classes = [IsHRorAdmin]
 
     def get_object(self):
         obj, created = CompanyProfile.objects.get_or_create(pk=1)
