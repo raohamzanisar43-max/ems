@@ -16,6 +16,7 @@ import Chat from "./pages/Chat";
 import Roles from "./pages/Roles";
 import Permissions from "./pages/Permissions";
 import Settings from "./pages/Settings";
+import CompanySettings from "./pages/CompanySettings";
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="roles" element={<Roles />} />
             <Route path="permissions" element={<Permissions />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="settings/company" element={<CompanySettings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
