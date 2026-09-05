@@ -66,6 +66,7 @@ const ATTENDANCE_STYLES = `
 .attendance-tile-icon { color: #00478c; font-size: 31px; line-height: 1; margin-bottom: 18px; }
 .attendance-tile-label { margin: 0; color: #414752; font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .attendance-tile-value { color: #171c1f; font-size: 34px; line-height: 1; font-weight: 700; letter-spacing: -.02em; }
+.attendance-office-timing { max-width: 100%; font-size: 17px; line-height: 1.25; letter-spacing: 0; text-align: center; white-space: pre-line; overflow-wrap: anywhere; }
 .attendance-tile-hint { margin: 7px 0 0; color: #414752; font-size: 14px; }
 .attendance-filter {
   padding: 6px 11px; border-radius: 999px; border: 1px solid #c1c6d4;
@@ -86,6 +87,7 @@ const ATTENDANCE_STYLES = `
   .attendance-flip-card { height: 126px; }
   .attendance-tile-icon { margin-bottom: 12px; }
   .attendance-tile-value { font-size: 28px; }
+  .attendance-office-timing { font-size: 15px; line-height: 1.2; }
 }
 @media (prefers-reduced-motion: reduce) {
   .attendance-flip-inner { transition: none; }
@@ -233,13 +235,13 @@ function officeTimingSummary(profile) {
   const firstShift = `${formatOfficeTime(start)} to ${formatOfficeTime(end)}`;
 
   if (profile?.is_dual_shift && (secondStart || secondEnd)) {
-    return `${firstShift} | ${formatOfficeTime(secondStart)} to ${formatOfficeTime(secondEnd)}`;
+    return `${firstShift}\n${formatOfficeTime(secondStart)} to ${formatOfficeTime(secondEnd)}`;
   }
 
   return firstShift;
 }
 
-function StatTile({ icon, label, value, hint, title }) {
+function StatTile({ icon, label, value, hint, title, valueClassName = "" }) {
   return (
     <div className="attendance-flip-card" title={title ?? undefined}>
       <div className="attendance-flip-inner">
@@ -250,7 +252,7 @@ function StatTile({ icon, label, value, hint, title }) {
           <p className="attendance-tile-label">{label}</p>
         </div>
         <div className="attendance-flip-face attendance-flip-back">
-          <div className="attendance-tile-value">{value}</div>
+          <div className={`attendance-tile-value ${valueClassName}`}>{value}</div>
           {hint && <p className="attendance-tile-hint">{hint}</p>}
         </div>
       </div>
@@ -472,6 +474,7 @@ function MyAttendancePanel({ user }) {
               icon="fa-solid fa-business-time"
               label="Office Timing"
               value={officeTimingSummary(user)}
+              valueClassName="attendance-office-timing"
               hint="Your schedule"
               title={`Office time: ${officeTimingSummary(user)}`}
             />
