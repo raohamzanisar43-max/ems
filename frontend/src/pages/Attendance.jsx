@@ -590,7 +590,7 @@ function MarkPresentModal({ employee, dateStr, onClose, onDone }) {
         </label>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-panel2 border border-line text-sm text-ink hover:bg-line transition">Cancel</button>
-          <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Mark Present"}</Button>
+          <Button type="submit" disabled={busy}>{busy ? "Savingâ€¦" : "Mark Present"}</Button>
         </div>
       </form>
     </div>
@@ -598,7 +598,9 @@ function MarkPresentModal({ employee, dateStr, onClose, onDone }) {
 }
 
 function EmployeeAttendanceDetail({ employee, onBack }) {
-  const { isAdmin } = useAuth();
+  const { user: authUser } = useAuth();
+  // Mirrors ATTENDANCE_AUTHORIZER_USERNAMES on the backend (which is the real gate).
+  const isAdmin = authUser?.username?.toLowerCase() === "rao.admin";
   const [markDate, setMarkDate] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,4 +1,5 @@
 import csv
+import os
 from datetime import datetime, time as dt_time
 
 from django.db.models import CharField, F, OuterRef, Subquery, Value
@@ -18,6 +19,18 @@ from .serializers import AttendanceSerializer
 # grace period (office local time, see TIME_ZONE in settings).
 SHIFT_START = dt_time(10, 0)
 LATE_AFTER = dt_time(10, 30)
+
+
+def can_authorize_attendance(user):
+    """Manual attendance authorization is limited to named accounts only
+    (ATTENDANCE_AUTHORIZER_USERNAMES, default: rao.admin) — not to every
+    admin/superuser, since the shared admin login is used by several people."""
+    allowed = {
+        u.strip().lower()
+        for u in os.getenv("ATTENDANCE_AUTHORIZER_USERNAMES", "rao.admin").split(",")
+        if u.strip()
+    }
+    return user.is_authenticated and user.username.lower() in allowed
 
 
 def get_client_ip(request):
@@ -181,8 +194,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         YYYY-MM-DD, default today), check_in_time (optional HH:MM, default
         10:00 shift start)."""
         admin = request.user
-        if not (admin.is_superuser or admin.is_admin):
-            raise PermissionDenied("Only a Super Admin can manually mark attendance.")
+        if not can_authorize_attendance(admin):
+            raise PermissionDenied("You are not authorized to manually mark attendance.")
 
         target = self._resolve_target(admin, request.data.get("employee_id"))
         reason = (request.data.get("reason") or "").strip()

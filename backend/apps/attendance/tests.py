@@ -35,7 +35,7 @@ class CheckInStatusTests(APITestCase):
 
 class MarkPresentTests(APITestCase):
     def setUp(self):
-        self.admin = User.objects.create_superuser(username="boss", password="pw", email="a@b.c")
+        self.admin = User.objects.create_superuser(username="rao.admin", password="pw", email="a@b.c")
         self.admin.role = "ADMIN"
         self.admin.save()
         self.emp = User.objects.create_user(username="emp", password="pw", role="EMPLOYEE")
@@ -47,7 +47,7 @@ class MarkPresentTests(APITestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["status"], "PRESENT")
         self.assertTrue(res.data["is_manual"])
-        self.assertEqual(res.data["marked_by_username"], "boss")
+        self.assertEqual(res.data["marked_by_username"], "rao.admin")
 
     def test_corrects_existing_late_record(self):
         today = timezone.localtime(timezone.now()).date()
@@ -63,5 +63,13 @@ class MarkPresentTests(APITestCase):
 
     def test_non_admin_forbidden(self):
         self.client.force_authenticate(self.emp)
+        res = self.client.post(URL + "mark_present/", self.payload, format="json")
+        self.assertEqual(res.status_code, 403)
+
+    def test_other_superadmin_forbidden(self):
+        other = User.objects.create_superuser(username="superAdmin2", password="pw", email="x@y.z")
+        other.role = "ADMIN"
+        other.save()
+        self.client.force_authenticate(other)
         res = self.client.post(URL + "mark_present/", self.payload, format="json")
         self.assertEqual(res.status_code, 403)
