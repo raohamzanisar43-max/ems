@@ -600,7 +600,7 @@ function MarkPresentModal({ employee, dateStr, onClose, onDone }) {
 function EmployeeAttendanceDetail({ employee, onBack }) {
   const { user: authUser } = useAuth();
   // Mirrors ATTENDANCE_AUTHORIZER_USERNAMES on the backend (which is the real gate).
-  const isAdmin = authUser?.username?.toLowerCase() === "rao.admin";
+  const isAdmin = authUser?.username?.toLowerCase() === "superadmin";
   const [markDate, setMarkDate] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

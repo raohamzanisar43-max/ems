@@ -23,11 +23,11 @@ LATE_AFTER = dt_time(10, 30)
 
 def can_authorize_attendance(user):
     """Manual attendance authorization is limited to named accounts only
-    (ATTENDANCE_AUTHORIZER_USERNAMES, default: rao.admin) — not to every
+    (ATTENDANCE_AUTHORIZER_USERNAMES, default: superAdmin) — not to every
     admin/superuser, since the shared admin login is used by several people."""
     allowed = {
         u.strip().lower()
-        for u in os.getenv("ATTENDANCE_AUTHORIZER_USERNAMES", "rao.admin").split(",")
+        for u in os.getenv("ATTENDANCE_AUTHORIZER_USERNAMES", "superAdmin").split(",")
         if u.strip()
     }
     return user.is_authenticated and user.username.lower() in allowed
