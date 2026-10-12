@@ -16,8 +16,12 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "department_id", "department_name",
             "date", "check_in", "check_out", "hours_worked",
             "status", "status_display", "location", "location_display",
+            "is_manual", "marked_by_username", "mark_reason", "marked_at",
         ]
-        read_only_fields = ["employee_username", "department_id"]
+        read_only_fields = [
+            "employee_username", "department_id",
+            "is_manual", "marked_by_username", "mark_reason", "marked_at",
+        ]
 
     def get_department_name(self, obj):
         # Populated for free when the queryset was annotated (AttendanceViewSet

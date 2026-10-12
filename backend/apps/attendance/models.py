@@ -25,6 +25,14 @@ class Attendance(models.Model):
     # that fact visible in the table/CSV rather than changing check-in behavior.
     location = models.CharField(max_length=20, choices=Location.choices, default=Location.OFFICE)
 
+    # Audit trail for attendance authorized manually by a super admin (employee
+    # arrived on time but forgot to check in).
+    is_manual = models.BooleanField(default=False)
+    marked_by_id = models.IntegerField(null=True, blank=True)
+    marked_by_username = models.CharField(max_length=150, blank=True, default="")
+    mark_reason = models.CharField(max_length=500, blank=True, default="")
+    marked_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         unique_together = ["employee_id", "date"]
         ordering = ["-date"]

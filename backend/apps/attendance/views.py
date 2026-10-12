@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime, time as dt_time
 
 from django.db.models import CharField, F, OuterRef, Subquery, Value
 from django.db.models.functions import Coalesce, Concat, NullIf, Trim
@@ -6,11 +7,17 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from .models import Attendance
 from .permissions import CanManageAttendance
 from .serializers import AttendanceSerializer
+
+
+# Shift starts at 10:00 AM; employees are marked Late only after the 10:30 AM
+# grace period (office local time, see TIME_ZONE in settings).
+SHIFT_START = dt_time(10, 0)
+LATE_AFTER = dt_time(10, 30)
 
 
 def get_client_ip(request):
@@ -131,8 +138,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         user = request.user
         now = timezone.now()
         local_time = timezone.localtime(now)
-        cutoff_time = timezone.datetime.strptime("09:30:00", "%H:%M:%S").time()
-        status_value = Attendance.Status.LATE if local_time.time() > cutoff_time else Attendance.Status.PRESENT
+        status_value = Attendance.Status.LATE if local_time.time() > LATE_AFTER else Attendance.Status.PRESENT
 
         obj, created = Attendance.objects.get_or_create(
             employee_id=user.id,
@@ -164,6 +170,58 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 status=400,
             )
 
+        return Response(AttendanceSerializer(obj).data)
+
+    @action(detail=False, methods=["post"])
+    def mark_present(self, request):
+        """Super-admin only. Authorize an employee as Present (on time) when
+        they reached the office on time but forgot to check in. Creates the
+        day's record or corrects an existing Late/Absent one, and records who
+        did it and why. Body: employee_id, reason (required), date (optional,
+        YYYY-MM-DD, default today), check_in_time (optional HH:MM, default
+        10:00 shift start)."""
+        admin = request.user
+        if not (admin.is_superuser or admin.is_admin):
+            raise PermissionDenied("Only a Super Admin can manually mark attendance.")
+
+        target = self._resolve_target(admin, request.data.get("employee_id"))
+        reason = (request.data.get("reason") or "").strip()
+        if not reason:
+            raise ValidationError({"reason": "A reason is required to authorize attendance."})
+
+        local_now = timezone.localtime(timezone.now())
+        raw_date = request.data.get("date")
+        try:
+            day = datetime.strptime(raw_date, "%Y-%m-%d").date() if raw_date else local_now.date()
+        except (TypeError, ValueError):
+            raise ValidationError({"date": "Use the format YYYY-MM-DD."})
+        if day > local_now.date():
+            raise ValidationError({"date": "Attendance cannot be marked for a future date."})
+
+        raw_time = request.data.get("check_in_time")
+        try:
+            in_time = datetime.strptime(raw_time, "%H:%M").time() if raw_time else SHIFT_START
+        except (TypeError, ValueError):
+            raise ValidationError({"check_in_time": "Use the format HH:MM."})
+        if in_time > LATE_AFTER:
+            raise ValidationError({"check_in_time": "Time-stamp must be within the on-time window (up to 10:30 AM)."})
+        check_in = timezone.make_aware(datetime.combine(day, in_time))
+
+        obj, _ = Attendance.objects.update_or_create(
+            employee_id=target.id,
+            date=day,
+            defaults={
+                "employee_username": target.username,
+                "department_id": target.department_id,
+                "status": Attendance.Status.PRESENT,
+                "check_in": check_in,
+                "is_manual": True,
+                "marked_by_id": admin.id,
+                "marked_by_username": admin.username,
+                "mark_reason": reason[:500],
+                "marked_at": timezone.now(),
+            },
+        )
         return Response(AttendanceSerializer(obj).data)
 
     @action(detail=False, methods=["post"])

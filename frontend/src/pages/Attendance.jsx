@@ -537,7 +537,69 @@ function MyAttendancePanel({ user }) {
 
 /* ============================== Manager: employee detail drill-down ============================== */
 
+function MarkPresentModal({ employee, dateStr, onClose, onDone }) {
+  const [time, setTime] = useState("10:00");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!reason.trim()) {
+      setError("Please enter a reason for authorizing this attendance.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await api.post("/api/attendance/attendance/mark_present/", {
+        employee_id: employee.id,
+        date: dateStr,
+        check_in_time: time,
+        reason: reason.trim(),
+      });
+      onDone();
+    } catch (err) {
+      const d = err?.response?.data;
+      setError(d?.detail || d?.reason || d?.check_in_time || d?.date || "Couldn't mark attendance.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-white rounded-xl border border-line shadow-xl p-6 space-y-4">
+        <div>
+          <h3 className="font-display text-lg font-extrabold text-ink">Authorize Attendance</h3>
+          <p className="text-xs text-muted mt-1">
+            Mark <span className="font-semibold text-ink">{employeeName(employee)}</span> as Present (on time) for{" "}
+            <span className="font-semibold text-ink">{dateStr}</span>. This action is logged with your name.
+          </p>
+        </div>
+        <ErrorBanner message={error} />
+        <label className="block text-xs font-medium text-muted">
+          Arrival time (on-time window: up to 10:30 AM)
+          <input type="time" value={time} max="10:30" onChange={(e) => setTime(e.target.value)} required
+            className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm text-ink" />
+        </label>
+        <label className="block text-xs font-medium text-muted">
+          Reason (required)
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={500}
+            placeholder="e.g. Reached the office at 9:55 AM but forgot to check in."
+            className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm text-ink" />
+        </label>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-panel2 border border-line text-sm text-ink hover:bg-line transition">Cancel</button>
+          <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Mark Present"}</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function EmployeeAttendanceDetail({ employee, onBack }) {
+  const { isAdmin } = useAuth();
+  const [markDate, setMarkDate] = useState(null);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -664,6 +726,15 @@ function EmployeeAttendanceDetail({ employee, onBack }) {
 
       <ErrorBanner message={error} />
 
+      {markDate && (
+        <MarkPresentModal
+          employee={employee}
+          dateStr={markDate}
+          onClose={() => setMarkDate(null)}
+          onDone={() => { setMarkDate(null); load(); }}
+        />
+      )}
+
       {loading ? (
         <Loading />
       ) : (
@@ -690,6 +761,7 @@ function EmployeeAttendanceDetail({ employee, onBack }) {
                       <th className="px-1 py-2 font-medium">Hours</th>
                       <th className="px-1 py-2 font-medium">Location</th>
                       <th className="px-1 py-2 font-medium">Status</th>
+                      {isAdmin && <th className="px-1 py-2 font-medium">Action</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -709,7 +781,21 @@ function EmployeeAttendanceDetail({ employee, onBack }) {
                           ) : (
                             <span className="text-xs text-muted">No record</span>
                           )}
+                          {d.record?.is_manual && (
+                            <span className="ml-1.5 text-[10px] text-signal font-semibold" title={`Authorized by ${d.record.marked_by_username}: ${d.record.mark_reason}`}>
+                              <i className="fa-solid fa-user-shield"></i> Authorized
+                            </span>
+                          )}
                         </td>
+                        {isAdmin && (
+                          <td className="px-1 py-2 whitespace-nowrap">
+                            {!d.isWeekend && d.dateStr <= todayStr() && d.record?.status !== "PRESENT" && (
+                              <button onClick={() => setMarkDate(d.dateStr)} className="text-xs font-semibold text-signal hover:underline">
+                                Mark Present
+                              </button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
