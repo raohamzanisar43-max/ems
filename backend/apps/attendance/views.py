@@ -242,7 +242,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         verify_office_wifi(request)
         user = request.user
         try:
-            obj = Attendance.objects.get(employee_id=user.id, date=timezone.now().date())
+            obj = Attendance.objects.get(employee_id=user.id, date=timezone.localdate())
         except Attendance.DoesNotExist:
             return Response({"detail": "No check-in found for today."}, status=400)
 
@@ -317,7 +317,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         )
         writer = csv.writer(response)
         writer.writerow(
-            ["Employee", "Username", "Department", "Date", "Check In", "Check Out", "Hours", "Location", "Status"]
+            ["Employee", "Username", "Department", "Date", "Check In (PKT)", "Check Out (PKT)", "Hours", "Location", "Status"]
         )
 
         sentinel = object()
@@ -342,8 +342,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 record.employee_username,
                 record.department_name or "—",
                 record.date.strftime("%Y-%m-%d"),
-                check_in_local.strftime("%I:%M:%S %p") if check_in_local else "—",
-                check_out_local.strftime("%I:%M:%S %p") if check_out_local else "—",
+                check_in_local.strftime("%I:%M %p") if check_in_local else "—",
+                check_out_local.strftime("%I:%M %p") if check_out_local else "—",
                 hours or "—",
                 record.get_location_display(),
                 record.get_status_display(),

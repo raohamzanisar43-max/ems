@@ -137,7 +137,7 @@ _csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", os.getenv("CORS_ALLOWED_ORIGIN
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_origins if o.strip()]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Asia/Riyadh"
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Karachi")
 USE_I18N = True
 USE_TZ = True
 

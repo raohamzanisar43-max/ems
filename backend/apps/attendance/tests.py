@@ -73,3 +73,14 @@ class MarkPresentTests(APITestCase):
         self.client.force_authenticate(other)
         res = self.client.post(URL + "mark_present/", self.payload, format="json")
         self.assertEqual(res.status_code, 403)
+
+
+class CsvTimezoneTests(APITestCase):
+    def test_csv_shows_check_in_in_office_time(self):
+        emp = User.objects.create_user(username="emp", password="pw", role="EMPLOYEE")
+        # 05:00 UTC == 10:00 AM in Asia/Karachi (UTC+5)
+        when = timezone.make_aware(datetime(2026, 1, 12, 10, 0), timezone.get_current_timezone())
+        Attendance.objects.create(employee_id=emp.id, employee_username="emp", date=when.date(), check_in=when, status="PRESENT")
+        self.client.force_authenticate(emp)
+        res = self.client.get(URL + "export_csv/", {"year": 2026, "month": 1})
+        self.assertIn("10:00 AM", res.content.decode())
