@@ -311,7 +311,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             def group_key(record):
                 return record.employee_id
 
-        response = HttpResponse(content_type="text/csv")
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        # UTF-8 BOM so Excel reads the file as UTF-8 (otherwise "—" shows as "â€”").
+        response.write("﻿")
         response["Content-Disposition"] = (
             f'attachment; filename="attendance_{year:04d}-{month:02d}{filename_suffix}.csv"'
         )
@@ -341,7 +343,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 record.employee_display_name,
                 record.employee_username,
                 record.department_name or "—",
-                record.date.strftime("%Y-%m-%d"),
+                # Text like "Thu, 01 Oct 2026" so Excel never shows ######## in a narrow column.
+                record.date.strftime("%a, %d %b %Y"),
                 check_in_local.strftime("%I:%M %p") if check_in_local else "—",
                 check_out_local.strftime("%I:%M %p") if check_out_local else "—",
                 hours or "—",
